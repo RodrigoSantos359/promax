@@ -1,0 +1,82 @@
+BODY
+{
+    MARGIN-TOP: 0px;
+    PADDING-LEFT: 0px;
+    MARGIN-LEFT: 0px;
+    PADDING-TOP: 0px
+}
+.Buttonic
+{
+    BORDER-RIGHT: darkblue thin solid;
+    BORDER-TOP: #99ccff thin solid;
+    FONT-SIZE: xx-small;
+    BORDER-LEFT: #99ccff thin solid;
+    WIDTH: 4px;
+    CURSOR: hand;
+    COLOR: white;
+    BORDER-BOTTOM: darkblue thin solid;
+    FONT-FAMILY: Verdana;
+    HEIGHT: 4px;
+    BACKGROUND-COLOR: #6699cc;
+    TEXT-ALIGN: center;
+    TEXT-DECORATION: none
+}
+.Buttonic2
+{
+    BORDER-RIGHT: darkblue thin solid;
+    BORDER-TOP: #99ccff thin solid;
+    FONT-SIZE: xx-small;
+    BORDER-LEFT: #99ccff thin solid;
+    WIDTH: 4px;
+    CURSOR: hand;
+    COLOR: white;
+    BORDER-BOTTOM: darkblue thin solid;
+    FONT-FAMILY: Verdana;
+    HEIGHT: 4px;
+    BACKGROUND-COLOR: #000080;
+    TEXT-ALIGN: center;
+    TEXT-DECORATION: none
+}
+TD
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: x-small;
+    COLOR: white;
+    FONT-FAMILY: Verdana
+}
+.Btn
+{
+    FONT-SIZE: x-small;
+    CURSOR: hand;
+    COLOR: white;
+    FONT-FAMILY: Verdana;
+    BACKGROUND-COLOR: transparent
+}
+.TableTop
+{
+    BORDER-RIGHT: thin solid;
+    BORDER-TOP: thin solid;
+    BORDER-LEFT: thin solid
+}
+.TableBotton
+{
+    BORDER-RIGHT: thin solid;
+    BORDER-LEFT: thin solid;
+    BORDER-BOTTOM: thin solid
+}
+FORM
+{
+    BORDER-RIGHT: medium none;
+    BORDER-TOP: medium none;
+    MARGIN-TOP: 0px;
+    MARGIN-BOTTOM: 0px;
+    BORDER-LEFT: medium none;
+    BORDER-BOTTOM: medium none
+}
+.TableAll
+{
+    BORDER-RIGHT: red thin solid;
+    BORDER-TOP: red thin solid;
+    BORDER-LEFT: red thin solid;
+    BORDER-BOTTOM: red thin solid
+}

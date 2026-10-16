@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }} - Dashboard</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous">
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .app-header {
+            border-radius: 1rem;
+        }
+
+        .stat-card .display-6 {
+            color: #667eea;
+        }
+
+        .company-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .company-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12) !important;
+        }
+
+        .details-item {
+            background: #f8f9fb;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+
+        .details-item label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        footer {
+            color: #f1f1f1;
+        }
+
+        .day-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background: white;
+            color: #333;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .day-btn:hover:not(.day-btn-disabled) {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .day-btn-disabled {
+            background: #f1f1f1;
+            color: #bbb;
+            cursor: not-allowed;
+        }
+
+        .day-btn-selected {
+            background: #667eea !important;
+            border-color: #667eea !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+
+        <!-- Header -->
+        <div class="app-header bg-white shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">{{ app_name }}</h1>
+                <p class="text-muted mb-0">Sistema de automação elegante para PromaX Cloud</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary" onclick="openRoutineEditorGlobal()">
+                    <i class="bi bi-diagram-3"></i> Rotina / Mapa de Campos
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="openMapColRelModal()">
+                    <i class="bi bi-table"></i> Mapa de Colunas de Relatório
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card stat-card shadow-sm text-center h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase small mb-2">Empresas Ativas</h6>
+                        <div class="display-6 fw-bold">{{ companies|length }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card shadow-sm text-center h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase small mb-2">Automações</h6>
+                        <div class="display-6 fw-bold">{{ total_automations }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card shadow-sm text-center h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase small mb-2">Execuções Hoje</h6>
+                        <div class="display-6 fw-bold">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card shadow-sm text-center h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase small mb-2">Taxa de Sucesso</h6>
+                        <div class="display-6 fw-bold">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Companies Section -->
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="h5 mb-0">Empresas Configuradas</h2>
+                    <button type="button" class="btn btn-primary" onclick="openAddCompanyModal()">
+                        <i class="bi bi-plus-lg"></i> Adicionar Empresa
+                    </button>
+                </div>
+
+                {% if companies %}
+                    {% for company in companies %}
+                        <div class="card company-card mb-3">
+                            <div class="card-body">
+                                <h3 class="h5 mb-3">{{ company.name }}</h3>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Unidade</small>
+                                        {{ company.unit }}
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Status</small>
+                                        {% if company.is_active %}
+                                            <span class="badge text-bg-success">Ativa</span>
+                                        {% else %}
+                                            <span class="badge text-bg-danger">Inativa</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Usuário</small>
+                                        {{ company.username }}
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">URL</small>
+                                        <a href="{{ company.promax_url }}" target="_blank">
+                                            Acessar <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="openDetailsModal({{ company.id }})">
+                                        Ver Detalhes
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="editCompany({{ company.id }})">
+                                        Editar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                        <h5>Nenhuma empresa configurada</h5>
+                        <p class="mb-0">Clique no botão acima para adicionar sua primeira empresa</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-4 small">
+            <p>&copy; {{ year }} PromaX Automation Suite v{{ version }}</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Adicionar Empresa -->
+    <div class="modal fade" id="companyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="companyModalTitle">Adicionar Empresa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info small" role="alert">
+                        Preencha as informações de acesso ao PromaX para sua empresa. Estes dados serão criptografados e armazenados com segurança.
+                    </div>
+
+                    <form id="companyForm">
+                        <input type="hidden" id="companyEditingId" value="">
+
+                        <div class="mb-3">
+                            <label for="companyName" class="form-label">Nome da Empresa *</label>
+                            <input type="text" class="form-control" id="companyName" name="name" required placeholder="Ex: Dibrasa">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="promaxUrl" class="form-label">URL do PromaX *</label>
+                            <input type="url" class="form-control" id="promaxUrl" name="promax_url" required placeholder="https://dibrasa.promaxcloud.com.br/">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Usuário *</label>
+                            <input type="text" class="form-control" id="username" name="username" required placeholder="Ex: filipe">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label" id="passwordLabel">Senha *</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Sua senha">
+                            <div class="form-text" id="passwordHelp" style="display: none;">Deixe em branco para manter a senha atual.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">Unidade PromaX *</label>
+                            <input type="text" class="form-control" id="unit" name="unit" required placeholder="Ex: 161.0001 - Dibrasa">
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleWkradarBtn" onclick="toggleWkradarSection()">
+                                Configurar API WKRADAR
+                            </button>
+                        </div>
+
+                        <div id="wkradarSection" style="display: none;">
+                            <div class="alert alert-secondary small" role="alert">
+                                Parâmetros usados para obter o token de acesso à API WKRADAR (necessários para outras rotinas). O token expira em ~10 minutos e é obtido automaticamente sempre que necessário — não é preciso informá-lo aqui.
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="baseEmpresaWkradar" class="form-label">Base/Empresa WKRADAR</label>
+                                <input type="text" class="form-control" id="baseEmpresaWkradar" name="base_empresa_wkradar" placeholder="Ex: dibrasa">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="usuarioWkradar" class="form-label">Usuário WKRADAR</label>
+                                <input type="text" class="form-control" id="usuarioWkradar" name="usuario_wkradar" placeholder="Ex: filipe">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="senhaWkradar" class="form-label" id="senhaWkradarLabel">Senha WKRADAR</label>
+                                <input type="password" class="form-control" id="senhaWkradar" name="senha_wkradar" placeholder="Senha de acesso à WKRADAR">
+                                <div class="form-text" id="senhaWkradarHelp" style="display: none;">Deixe em branco para manter a senha atual.</div>
+                            </div>
+
+                            <div class="mb-3" id="testWkradarWrapper" style="display: none;">
+                                <button type="button" class="btn btn-outline-info btn-sm" id="testWkradarBtn" onclick="testWkradarConnection()">
+                                    Testar conexão WKRADAR
+                                </button>
+                                <span id="testWkradarResult" class="ms-2 small"></span>
+                            </div>
+                        </div>
+
+                        <div class="text-center" id="formLoading" style="display: none;">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            <span class="ms-2" id="formLoadingText">Adicionando empresa...</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="submitCompanyBtn">Adicionar Empresa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes da Empresa -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsCompanyName">Detalhes da Empresa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detailsLoading" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm text-primary"></div>
+                        <span class="ms-2">Carregando...</span>
+                    </div>
+
+                    <div id="detailsBody" style="display: none;">
+                        <div class="row g-3 mb-4">
+                            <div class="col-6 col-md-3">
+                                <div class="details-item">
+                                    <label>Status</label>
+                                    <span id="detailsStatus"></span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="details-item">
+                                    <label>Unidade</label>
+                                    <span id="detailsUnit"></span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="details-item">
+                                    <label>Usuário</label>
+                                    <span id="detailsUsername"></span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="details-item">
+                                    <label>Criada em</label>
+                                    <span id="detailsCreatedAt"></span>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="details-item">
+                                    <label>URL do PromaX</label>
+                                    <a id="detailsUrl" href="#" target="_blank"></a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <h6 class="mb-0">Automações</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleNewAutomationForm()">
+                                <i class="bi bi-plus-lg"></i> Nova Automação
+                            </button>
+                        </div>
+
+                        <div id="detailsAutomationsList" class="list-group list-group-flush mt-2"></div>
+                        <div id="detailsAutomationsEmpty" class="text-center text-muted py-3" style="display: none;">
+                            Nenhuma automação configurada para esta empresa e unidade.
+                        </div>
+
+                        <!-- Formulário de Nova/Editar Automação -->
+                        <div id="newAutomationForm" class="border rounded p-3 mt-3" style="display: none;">
+                            <h6 class="mb-3" id="automationFormTitle">Configurar Nova Automação</h6>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nome *</label>
+                                    <input type="text" class="form-control" id="autoName" required placeholder="Ex: Lançamentos diários">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Rotina *</label>
+                                    <input type="text" class="form-control" id="autoRoutine" required placeholder="Ex: 14.05.05">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Horário de Execução *</label>
+                                    <input type="time" class="form-control" id="autoExecutionTime" value="08:00" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Frequência *</label>
+                                    <select class="form-select" id="autoInterval" required onchange="onIntervalChange()">
+                                        <option value="daily">Diária</option>
+                                        <option value="weekly">Semanal</option>
+                                        <option value="monthly">Mensal</option>
+                                    </select>
+                                </div>
+
+                                <!-- Campos da Frequência Semanal -->
+                                <div class="col-12" id="weeklyDaysField" style="display: none;">
+                                    <label class="form-label">Dias da Semana *</label>
+                                    <div class="d-flex flex-wrap gap-3" id="weeklyDaysOptions">
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="0" id="weekday0">
+                                            <label class="form-check-label" for="weekday0">Domingo</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="1" id="weekday1">
+                                            <label class="form-check-label" for="weekday1">Segunda</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="2" id="weekday2">
+                                            <label class="form-check-label" for="weekday2">Terça</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="3" id="weekday3">
+                                            <label class="form-check-label" for="weekday3">Quarta</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="4" id="weekday4">
+                                            <label class="form-check-label" for="weekday4">Quinta</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="5" id="weekday5">
+                                            <label class="form-check-label" for="weekday5">Sexta</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input weekday-checkbox" type="checkbox" value="6" id="weekday6">
+                                            <label class="form-check-label" for="weekday6">Sábado</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Campos da Frequência Mensal -->
+                                <div class="col-12" id="monthlyOptionsField" style="display: none;">
+                                    <label class="form-label">Opção Mensal *</label>
+                                    <select class="form-select" id="autoMonthlyType" onchange="onMonthlyTypeChange()">
+                                        <option value="first_day">Primeiro dia do mês</option>
+                                        <option value="last_day">Último dia do mês</option>
+                                        <option value="recurrence">Recorrência</option>
+                                        <option value="specific_day">Um dia específico</option>
+                                    </select>
+
+                                    <!-- Sub-campo: Recorrência -->
+                                    <div id="monthlyRecurrenceFields" class="row g-3 mt-2" style="display: none;">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Repetir a cada quantos dias *</label>
+                                            <input type="number" class="form-control" id="autoRecurrenceEveryNDays" value="1" min="1" max="31">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Dia que inicia *</label>
+                                            <input type="number" class="form-control" id="autoRecurrenceStartDay" value="1" min="1" max="31">
+                                        </div>
+                                    </div>
+
+                                    <!-- Sub-campo: Um dia específico (calendário genérico) -->
+                                    <div id="monthlySpecificDayField" class="mt-2" style="display: none;">
+                                        <label class="form-label">Escolha o dia (2 a 28) *</label>
+                                        <div id="specificDayCalendar" class="d-grid gap-1" style="grid-template-columns: repeat(7, 1fr); max-width: 320px;"></div>
+                                        <div class="form-text">Dias 1, 29, 30 e 31 não estão disponíveis para esta opção.</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Máx. Tentativas</label>
+                                    <input type="number" class="form-control" id="autoMaxRetries" value="3" min="0" max="10">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Intervalo entre Tentativas (s)</label>
+                                    <input type="number" class="form-control" id="autoRetryDelay" value="60" min="0" step="10">
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="autoIsActive" checked>
+                                        <label class="form-check-label" for="autoIsActive">Automação ativa</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleNewAutomationForm()">Cancelar</button>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveAutomationBtn" onclick="saveAutomation()">Salvar Automação</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="editCompanyFromDetails()">Editar Empresa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Logs de Execução -->
+    <div class="modal fade" id="executionLogsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Logs de Execução — <span id="executionLogsRoutineName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="executionLogsLoading" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm text-primary"></div>
+                        <span class="ms-2">Carregando...</span>
+                    </div>
+                    <div id="executionLogsEmpty" class="text-center text-muted py-4" style="display: none;">
+                        Nenhuma execução registrada ainda.
+                    </div>
+                    <div id="executionLogsList" class="list-group"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Mapa de Colunas de Relatório (CRUD de map_col_rel_rotina) -->
+    <div class="modal fade" id="mapColRelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mapa de Colunas de Relatório</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rotina</label>
+                        <select class="form-select" id="mapColRotinaSelect" onchange="onMapColRotinaChange()">
+                            <option value="">Selecione uma rotina...</option>
+                        </select>
+                    </div>
+
+                    <div id="mapColContent" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Mapeamentos cadastrados</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openMapColForm()">
+                                <i class="bi bi-plus-lg"></i> Novo Mapeamento
+                            </button>
+                        </div>
+
+                        <div id="mapColListContainer" class="list-group mb-3"></div>
+                        <div id="mapColEmptyState" class="text-center text-muted py-3" style="display: none;">
+                            Nenhum mapeamento cadastrado para esta rotina ainda.
+                        </div>
+
+                        <!-- Sub-CRUD: formulario de mapeamento -->
+                        <div id="mapColForm" class="border rounded p-3 mt-3" style="display: none;">
+                            <h6 class="mb-3" id="mapColFormTitle">Novo Mapeamento</h6>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nome do Relatório *</label>
+                                    <input type="text" class="form-control" id="mapColNomeRel" placeholder="Ex: Notas Fiscais Plus">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Qtd. Colunas *</label>
+                                    <input type="number" class="form-control" id="mapColQuantCol" min="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Separador *</label>
+                                    <input type="text" class="form-control" id="mapColSplitCol" placeholder="Ex: ;" maxlength="10">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Cabeçalho (primeira linha do arquivo, sem formatação) *</label>
+                                    <textarea class="form-control" id="mapColTextCabe" rows="3" placeholder="Ex: Empresa;Filial;Codigo fis;..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeMapColForm()">Cancelar</button>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveMapColBtn" onclick="saveMapCol()">Salvar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editor de Rotinas (CRUD de RotinaMap + sub-CRUD de campos) -->
+    <div class="modal fade" id="routineEditorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-diagram-3"></i> Editor de Rotinas / Mapa de Campos
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <!-- Modo global: lista de todas as RotinaMap -->
+                    <div id="routineListView">
+                        <div class="alert alert-info small">
+                            Rotinas compartilhadas podem ser usadas por várias automações/empresas. Edições aqui afetam todas elas.
+                        </div>
+                        <div id="routineListContainer" class="list-group mb-3"></div>
+                    </div>
+
+                    <!-- Modo detalhe: campos de uma RotinaMap especifica (compartilhada ou de uma automacao) -->
+                    <div id="routineDetailView" style="display: none;">
+                        <button type="button" class="btn btn-sm btn-link px-0 mb-2" onclick="backToRoutineList()">
+                            <i class="bi bi-arrow-left"></i> Voltar para lista de rotinas
+                        </button>
+
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="mb-1">
+                                    <span id="routineDetailNome"></span>
+                                    <span class="badge text-bg-secondary" id="routineDetailCode"></span>
+                                </h6>
+                                <span id="routineDetailBadges"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Campos Mapeados</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCampoForm()">
+                                <i class="bi bi-plus-lg"></i> Novo Campo
+                            </button>
+                        </div>
+
+                        <div id="camposListContainer" class="list-group mb-3"></div>
+                        <div id="camposEmptyState" class="text-center text-muted py-3" style="display: none;">
+                            Nenhum campo mapeado ainda.
+                        </div>
+
+                        <!-- Sub-CRUD: formulario de campo -->
+                        <div id="campoForm" class="border rounded p-3 mt-3" style="display: none;">
+                            <h6 class="mb-3" id="campoFormTitle">Novo Campo</h6>
+
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label">Nome do Campo *</label>
+                                    <input type="text" class="form-control" id="campoNomeCampo" placeholder="Ex: Classificação">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tipo *</label>
+                                    <select class="form-select" id="campoTipo" onchange="onCampoTipoChange()">
+                                        <option value="select">select</option>
+                                        <option value="text">text</option>
+                                        <option value="checkbox">checkbox</option>
+                                        <option value="radio">radio</option>
+                                        <option value="botao">botão</option>
+                                        <option value="data">data</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Ordem *</label>
+                                    <input type="number" class="form-control" id="campoOrdem" value="10" step="10">
+                                    <div class="form-text">Preenchimento acontece em ordem crescente.</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Seletor (HTML do campo) *</label>
+                                    <textarea class="form-control" id="campoSelect" rows="2" placeholder="Ex: &lt;input name='iniDat' ...&gt;"></textarea>
+                                </div>
+                                <div class="col-12" id="campoInfoInserirWrapper">
+                                    <label class="form-label">Informação a Inserir</label>
+                                    <div class="d-flex align-items-start gap-3">
+                                        <input type="text" class="form-control" id="campoInfoInserir" placeholder="Valor/opção a inserir">
+                                        <div class="form-check mt-2 text-nowrap" id="campoGerarListaWrapper" style="display: none;">
+                                            <input class="form-check-input" type="checkbox" id="campoGerarLista" onchange="onCampoGerarListaChange()">
+                                            <label class="form-check-label" for="campoGerarLista">
+                                                Lista de opções a ser gerada
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-text" id="campoInfoInserirHelp"></div>
+                                </div>
+
+                                <!-- Sessão de lista de opções (só aparece se tipo='select' e checkbox marcado) -->
+                                <div class="col-12" id="campoListaOpcoesSection" style="display: none;">
+                                    <div class="border rounded p-2 bg-light">
+                                        <label class="form-label small mb-1">Opções a gerar (um relatório por opção)</label>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <input type="text" class="form-control form-control-sm" id="campoNovaOpcao" placeholder="Digite uma opção e clique em Adicionar" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarOpcaoLista();}">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" onclick="adicionarOpcaoLista()">Adicionar à lista</button>
+                                            <button type="button" class="btn btn-outline-primary btn-sm text-nowrap" onclick="usarTodasAsOpcoes()">Todas as opções que existir</button>
+                                        </div>
+                                        <div id="campoOpcoesListaContainer" class="d-flex flex-wrap gap-1"></div>
+                                        <div class="form-text" id="campoOpcoesListaHelp"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12" id="campoExclusivoWrapper" style="display: none;">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="campoExclusivo">
+                                        <label class="form-check-label" for="campoExclusivo">
+                                            Tornar exclusivo desta automação (não afeta outras automações/empresas que usam esta rotina)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeCampoForm()">Cancelar</button>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveCampoBtn" onclick="saveCampo()">Salvar Campo</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle (Popper incluso) -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+    <script>
+        let currentDetailsCompanyId = null;
+        const companyModalEl = document.getElementById('companyModal');
+        const detailsModalEl = document.getElementById('detailsModal');
+        const routineEditorModalEl = document.getElementById('routineEditorModal');
+        const companyModal = new bootstrap.Modal(companyModalEl);
+        const detailsModal = new bootstrap.Modal(detailsModalEl);
+        const routineEditorModal = new bootstrap.Modal(routineEditorModalEl);
+
+        // Limpar formulário ao fechar a modal de adicionar/editar empresa
+        companyModalEl.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('companyForm').reset();
+            document.getElementById('companyEditingId').value = '';
+            document.getElementById('password').required = true;
+            document.getElementById('wkradarSection').style.display = 'none';
+            document.getElementById('testWkradarWrapper').style.display = 'none';
+            document.getElementById('testWkradarResult').textContent = '';
+        });
+
+        function toggleWkradarSection() {
+            const section = document.getElementById('wkradarSection');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Formata uma data/hora ISO (UTC, vinda da API) para o horário de
+        // São Paulo, independente do fuso configurado no navegador/SO.
+        function formatDateBR(isoString) {
+            if (!isoString) return '-';
+            return new Date(isoString).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        }
+
+        function openAddCompanyModal() {
+            document.getElementById('companyEditingId').value = '';
+            document.getElementById('companyModalTitle').textContent = 'Adicionar Empresa';
+            document.getElementById('submitCompanyBtn').textContent = 'Adicionar Empresa';
+            document.getElementById('passwordLabel').textContent = 'Senha *';
+            document.getElementById('password').required = true;
+            document.getElementById('passwordHelp').style.display = 'none';
+            document.getElementById('senhaWkradarLabel').textContent = 'Senha WKRADAR';
+            document.getElementById('senhaWkradarHelp').style.display = 'none';
+            // Testar conexão só faz sentido depois que a empresa já existe
+            // (o token é obtido a partir do company_id já salvo no banco).
+            document.getElementById('testWkradarWrapper').style.display = 'none';
+            companyModal.show();
+        }
+
+        async function editCompany(companyId) {
+            try {
+                const response = await fetch(`/api/companies/${companyId}`);
+                if (!response.ok) {
+                    throw new Error('Empresa não encontrada');
+                }
+                const company = await response.json();
+
+                document.getElementById('companyEditingId').value = company.id;
+                document.getElementById('companyName').value = company.name;
+                document.getElementById('promaxUrl').value = company.promax_url;
+                document.getElementById('username').value = company.username;
+                document.getElementById('password').value = '';
+                document.getElementById('unit').value = company.unit;
+
+                document.getElementById('baseEmpresaWkradar').value = company.base_empresa_wkradar || '';
+                document.getElementById('usuarioWkradar').value = company.usuario_wkradar || '';
+                document.getElementById('senhaWkradar').value = '';
+                document.getElementById('senhaWkradarLabel').textContent = company.has_wkradar ? 'Senha WKRADAR' : 'Senha WKRADAR *';
+                document.getElementById('senhaWkradarHelp').style.display = company.has_wkradar ? 'block' : 'none';
+                // Já existindo credenciais WKRADAR (ou mesmo recém-preenchidas), abre a
+                // seção automaticamente para facilitar a revisão/edição.
+                document.getElementById('wkradarSection').style.display = company.has_wkradar ? 'block' : 'none';
+                document.getElementById('testWkradarResult').textContent = '';
+                document.getElementById('testWkradarWrapper').style.display = company.has_wkradar ? 'block' : 'none';
+
+                document.getElementById('companyModalTitle').textContent = 'Editar Empresa';
+                document.getElementById('submitCompanyBtn').textContent = 'Salvar Alterações';
+                document.getElementById('passwordLabel').textContent = 'Senha';
+                document.getElementById('password').required = false;
+                document.getElementById('passwordHelp').style.display = 'block';
+
+                companyModal.show();
+            } catch (error) {
+                alert('Erro ao carregar empresa: ' + error.message);
+            }
+        }
+
+        function editCompanyFromDetails() {
+            if (currentDetailsCompanyId) {
+                detailsModal.hide();
+                editCompany(currentDetailsCompanyId);
+            }
+        }
+
+        // Testa as credenciais WKRADAR já salvas, buscando um token novo na
+        // API (só disponível editando uma empresa já existente).
+        async function testWkradarConnection() {
+            const companyId = document.getElementById('companyEditingId').value;
+            const resultEl = document.getElementById('testWkradarResult');
+            if (!companyId) return;
+
+            resultEl.className = 'ms-2 small text-muted';
+            resultEl.textContent = 'Testando...';
+
+            try {
+                const response = await fetch(`/api/companies/${companyId}/wkradar-token`, { method: 'POST' });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    resultEl.className = 'ms-2 small text-success';
+                    resultEl.textContent = `Token obtido com sucesso (expira em ${formatDateBR(result.expiration_brazil)}).`;
+                } else {
+                    resultEl.className = 'ms-2 small text-danger';
+                    resultEl.textContent = 'Falha: ' + (result.error || 'erro desconhecido');
+                }
+            } catch (error) {
+                resultEl.className = 'ms-2 small text-danger';
+                resultEl.textContent = 'Falha: ' + error.message;
+            }
+        }
+
+        // Adicionar ou editar empresa
+        document.getElementById('submitCompanyBtn').addEventListener('click', async function () {
+            const form = document.getElementById('companyForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const editingId = document.getElementById('companyEditingId').value;
+            const isEditing = !!editingId;
+
+            const loading = document.getElementById('formLoading');
+            document.getElementById('formLoadingText').textContent = isEditing ? 'Salvando alterações...' : 'Adicionando empresa...';
+            loading.style.display = 'block';
+
+            const formData = {
+                name: document.getElementById('companyName').value,
+                promax_url: document.getElementById('promaxUrl').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                unit: document.getElementById('unit').value,
+                base_empresa_wkradar: document.getElementById('baseEmpresaWkradar').value,
+                usuario_wkradar: document.getElementById('usuarioWkradar').value,
+                senha_wkradar: document.getElementById('senhaWkradar').value,
+            };
+
+            try {
+                const url = isEditing ? `/api/companies/${editingId}` : '/api/companies';
+                const method = isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    companyModal.hide();
+                    location.reload();
+                } else {
+                    alert('Erro ao salvar empresa: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao salvar empresa: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        const INTERVAL_LABELS = {
+            daily: 'Diária',
+            weekly: 'Semanal',
+            monthly: 'Mensal',
+        };
+
+        const WEEKDAY_LABELS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+        const WEEKDAY_SHORT_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+        const MONTHLY_TYPE_LABELS = {
+            first_day: 'Primeiro dia do mês',
+            last_day: 'Último dia do mês',
+            recurrence: 'Recorrência',
+            specific_day: 'Dia específico',
+        };
+
+        let currentEditingAutomationId = null;
+        let automationsCache = {};
+        let selectedSpecificDay = null;
+
+        // Alterna a exibição dos campos extras de acordo com a Frequência escolhida
+        function onIntervalChange() {
+            const interval = document.getElementById('autoInterval').value;
+
+            document.getElementById('weeklyDaysField').style.display = interval === 'weekly' ? 'block' : 'none';
+            document.getElementById('monthlyOptionsField').style.display = interval === 'monthly' ? 'block' : 'none';
+
+            if (interval === 'monthly') {
+                onMonthlyTypeChange();
+            }
+        }
+
+        // Alterna a exibição dos sub-campos da opção mensal escolhida
+        function onMonthlyTypeChange() {
+            const type = document.getElementById('autoMonthlyType').value;
+
+            document.getElementById('monthlyRecurrenceFields').style.display = type === 'recurrence' ? 'flex' : 'none';
+            document.getElementById('monthlySpecificDayField').style.display = type === 'specific_day' ? 'block' : 'none';
+
+            if (type === 'specific_day') {
+                buildSpecificDayCalendar();
+            }
+        }
+
+        // Monta o calendário genérico de 1 a 31, com 2-28 ativos e 1, 29, 30, 31 desativados
+        function buildSpecificDayCalendar() {
+            const container = document.getElementById('specificDayCalendar');
+            container.innerHTML = '';
+
+            for (let day = 1; day <= 31; day++) {
+                const disabled = day === 1 || day >= 29;
+
+                const btn = document.createElement('div');
+                btn.className = 'day-btn' + (disabled ? ' day-btn-disabled' : '') + (selectedSpecificDay === day ? ' day-btn-selected' : '');
+                btn.textContent = day;
+                btn.dataset.day = day;
+
+                if (!disabled) {
+                    btn.addEventListener('click', () => selectSpecificDay(day));
+                }
+
+                container.appendChild(btn);
+            }
+        }
+
+        function selectSpecificDay(day) {
+            selectedSpecificDay = day;
+            buildSpecificDayCalendar();
+        }
+
+        // Gera um resumo legível da frequência + configuração de agendamento para a listagem
+        function formatIntervalSummary(interval, scheduleConfig) {
+            if (interval === 'weekly' && scheduleConfig && scheduleConfig.days) {
+                const days = scheduleConfig.days
+                    .slice()
+                    .sort((a, b) => a - b)
+                    .map(d => WEEKDAY_SHORT_LABELS[d])
+                    .join(', ');
+                return `Semanal (${days})`;
+            }
+
+            if (interval === 'monthly' && scheduleConfig && scheduleConfig.type) {
+                if (scheduleConfig.type === 'recurrence') {
+                    return `Mensal (a cada ${scheduleConfig.every_n_days} dias, a partir do dia ${scheduleConfig.start_day})`;
+                }
+                if (scheduleConfig.type === 'specific_day') {
+                    return `Mensal (dia ${scheduleConfig.day})`;
+                }
+                return `Mensal (${MONTHLY_TYPE_LABELS[scheduleConfig.type] || scheduleConfig.type})`;
+            }
+
+            return INTERVAL_LABELS[interval] || interval;
+        }
+
+        // Modal de Detalhes
+        async function openDetailsModal(companyId) {
+            currentDetailsCompanyId = companyId;
+
+            const loading = document.getElementById('detailsLoading');
+            const body = document.getElementById('detailsBody');
+
+            // Esconder e limpar o formulario de nova automacao a cada abertura
+            closeAutomationForm();
+
+            loading.style.display = 'block';
+            body.style.display = 'none';
+            detailsModal.show();
+
+            try {
+                const [companyRes, automationsRes] = await Promise.all([
+                    fetch(`/api/companies/${companyId}`),
+                    fetch(`/api/automations?company_id=${companyId}`),
+                ]);
+
+                if (!companyRes.ok) {
+                    throw new Error('Empresa não encontrada');
+                }
+
+                const company = await companyRes.json();
+                const automations = automationsRes.ok ? await automationsRes.json() : [];
+
+                renderCompanyDetails(company, automations);
+
+                loading.style.display = 'none';
+                body.style.display = 'block';
+            } catch (error) {
+                console.error('Erro ao carregar detalhes:', error);
+                loading.innerHTML = `<span class="text-danger">Erro ao carregar detalhes: ${error.message}</span>`;
+            }
+        }
+
+        function resetAutomationForm() {
+            document.getElementById('autoName').value = '';
+            document.getElementById('autoRoutine').value = '';
+            document.getElementById('autoExecutionTime').value = '08:00';
+            document.getElementById('autoInterval').value = 'daily';
+            document.getElementById('autoMaxRetries').value = '3';
+            document.getElementById('autoRetryDelay').value = '60';
+            document.getElementById('autoIsActive').checked = true;
+
+            document.querySelectorAll('.weekday-checkbox').forEach(cb => cb.checked = false);
+
+            document.getElementById('autoMonthlyType').value = 'first_day';
+            document.getElementById('autoRecurrenceEveryNDays').value = '1';
+            document.getElementById('autoRecurrenceStartDay').value = '1';
+            selectedSpecificDay = null;
+
+            onIntervalChange();
+        }
+
+        // Le os campos condicionais preenchidos e monta o objeto schedule_config
+        function collectScheduleConfig() {
+            const interval = document.getElementById('autoInterval').value;
+
+            if (interval === 'weekly') {
+                const days = Array.from(document.querySelectorAll('.weekday-checkbox:checked'))
+                    .map(cb => parseInt(cb.value, 10));
+
+                if (days.length === 0) {
+                    throw new Error('Selecione ao menos um dia da semana.');
+                }
+
+                return { days };
+            }
+
+            if (interval === 'monthly') {
+                const type = document.getElementById('autoMonthlyType').value;
+
+                if (type === 'first_day' || type === 'last_day') {
+                    return { type };
+                }
+
+                if (type === 'recurrence') {
+                    const everyNDays = parseInt(document.getElementById('autoRecurrenceEveryNDays').value || '0', 10);
+                    const startDay = parseInt(document.getElementById('autoRecurrenceStartDay').value || '0', 10);
+
+                    if (!everyNDays || everyNDays < 1) {
+                        throw new Error('Informe de quantos em quantos dias a automação deve rodar.');
+                    }
+                    if (!startDay || startDay < 1 || startDay > 31) {
+                        throw new Error('Informe um dia de início válido (1 a 31).');
+                    }
+
+                    return { type: 'recurrence', every_n_days: everyNDays, start_day: startDay };
+                }
+
+                if (type === 'specific_day') {
+                    if (!selectedSpecificDay) {
+                        throw new Error('Selecione um dia específico no calendário (2 a 28).');
+                    }
+                    return { type: 'specific_day', day: selectedSpecificDay };
+                }
+            }
+
+            return null;
+        }
+
+        // Aplica um schedule_config existente na UI (usado ao editar uma automação)
+        function applyScheduleConfigToForm(interval, scheduleConfig) {
+            onIntervalChange();
+
+            if (interval === 'weekly') {
+                const days = (scheduleConfig && scheduleConfig.days) || [];
+                document.querySelectorAll('.weekday-checkbox').forEach(cb => {
+                    cb.checked = days.includes(parseInt(cb.value, 10));
+                });
+                return;
+            }
+
+            if (interval === 'monthly' && scheduleConfig) {
+                document.getElementById('autoMonthlyType').value = scheduleConfig.type || 'first_day';
+
+                if (scheduleConfig.type === 'recurrence') {
+                    document.getElementById('autoRecurrenceEveryNDays').value = scheduleConfig.every_n_days || 1;
+                    document.getElementById('autoRecurrenceStartDay').value = scheduleConfig.start_day || 1;
+                }
+
+                if (scheduleConfig.type === 'specific_day') {
+                    selectedSpecificDay = scheduleConfig.day || null;
+                }
+
+                onMonthlyTypeChange();
+            }
+        }
+
+        function openNewAutomationForm() {
+            currentEditingAutomationId = null;
+            resetAutomationForm();
+            document.getElementById('automationFormTitle').textContent = 'Configurar Nova Automação';
+            document.getElementById('saveAutomationBtn').textContent = 'Salvar Automação';
+            document.getElementById('newAutomationForm').style.display = 'block';
+        }
+
+        function closeAutomationForm() {
+            document.getElementById('newAutomationForm').style.display = 'none';
+            currentEditingAutomationId = null;
+        }
+
+        function toggleNewAutomationForm() {
+            const form = document.getElementById('newAutomationForm');
+            if (form.style.display === 'none') {
+                openNewAutomationForm();
+            } else {
+                closeAutomationForm();
+            }
+        }
+
+        function editAutomation(automationId) {
+            const automation = automationsCache[automationId];
+            if (!automation) return;
+
+            currentEditingAutomationId = automationId;
+
+            document.getElementById('autoName').value = automation.routine_name || '';
+            document.getElementById('autoExecutionTime').value = automation.execution_time || '08:00';
+            document.getElementById('autoInterval').value = automation.interval || 'daily';
+            document.getElementById('autoMaxRetries').value = automation.max_retries ?? 3;
+            document.getElementById('autoRetryDelay').value = automation.retry_delay ?? 60;
+            document.getElementById('autoIsActive').checked = !!automation.is_active;
+            document.getElementById('autoRoutine').value = automation.routine_id || '';
+
+            selectedSpecificDay = null;
+            applyScheduleConfigToForm(automation.interval, automation.schedule_config);
+
+            document.getElementById('automationFormTitle').textContent = 'Editar Automação';
+            document.getElementById('saveAutomationBtn').textContent = 'Atualizar Automação';
+            document.getElementById('newAutomationForm').style.display = 'block';
+            document.getElementById('newAutomationForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function saveAutomation() {
+            if (!currentDetailsCompanyId) return;
+
+            const name = document.getElementById('autoName').value.trim();
+            const routineId = document.getElementById('autoRoutine').value;
+            const executionTime = document.getElementById('autoExecutionTime').value;
+
+            if (!name || !routineId || !executionTime) {
+                alert('Preencha o nome, a rotina e o horário de execução.');
+                return;
+            }
+
+            let scheduleConfig;
+            try {
+                scheduleConfig = collectScheduleConfig();
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+
+            const payload = {
+                company_id: currentDetailsCompanyId,
+                routine_id: routineId,
+                routine_name: name,
+                execution_time: executionTime,
+                interval: document.getElementById('autoInterval').value,
+                schedule_config: scheduleConfig,
+                max_retries: parseInt(document.getElementById('autoMaxRetries').value || '3', 10),
+                retry_delay: parseInt(document.getElementById('autoRetryDelay').value || '60', 10),
+                is_active: document.getElementById('autoIsActive').checked,
+                start_date: new Date().toISOString(),
+            };
+
+            const isEditing = currentEditingAutomationId !== null;
+            const url = isEditing ? `/api/automations/${currentEditingAutomationId}` : '/api/automations';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            const saveBtn = document.getElementById('saveAutomationBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = isEditing ? 'Atualizando...' : 'Salvando...';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    closeAutomationForm();
+                    openDetailsModal(currentDetailsCompanyId);
+                } else {
+                    alert('Erro ao salvar automação: ' + (result.error || JSON.stringify(result)));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao salvar automação: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = isEditing ? 'Atualizar Automação' : 'Salvar Automação';
+            }
+        }
+
+        async function toggleAutomationActive(automationId, currentlyActive) {
+            try {
+                const response = await fetch(`/api/automations/${automationId}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: !currentlyActive }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (currentDetailsCompanyId) {
+                        openDetailsModal(currentDetailsCompanyId);
+                    }
+                } else {
+                    alert('Erro ao atualizar status: ' + (result.error || JSON.stringify(result)));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao atualizar status: ' + error.message);
+            }
+        }
+
+        function renderCompanyDetails(company, automations) {
+            document.getElementById('detailsCompanyName').textContent = company.name;
+
+            document.getElementById('detailsStatus').innerHTML = company.is_active
+                ? '<span class="badge text-bg-success">Ativa</span>'
+                : '<span class="badge text-bg-danger">Inativa</span>';
+
+            document.getElementById('detailsUnit').textContent = company.unit;
+            document.getElementById('detailsUsername').textContent = company.username;
+            document.getElementById('detailsCreatedAt').textContent = formatDateBR(company.created_at);
+
+            const urlEl = document.getElementById('detailsUrl');
+            urlEl.href = company.promax_url;
+            urlEl.textContent = company.promax_url;
+
+            const listEl = document.getElementById('detailsAutomationsList');
+            const emptyEl = document.getElementById('detailsAutomationsEmpty');
+
+            listEl.innerHTML = '';
+            automationsCache = {};
+
+            if (!automations || automations.length === 0) {
+                emptyEl.style.display = 'block';
+                return;
+            }
+
+            emptyEl.style.display = 'none';
+
+            automations.forEach(automation => {
+                automationsCache[automation.id] = automation;
+
+                const lastExecution = automation.last_execution
+                    ? formatDateBR(automation.last_execution)
+                    : 'Nunca executada';
+
+                // Automações com geração de relatório em lote (campo 'select'
+                // com "lista de opções a ser gerada") têm `last_summary`
+                // preenchido (ex: "4/30 baixado(s), 26 sem dados no
+                // período"). Nesse caso não faz sentido rotular como
+                // "failed" — faltar dados para algumas opções é esperado e
+                // varia a cada execução, não é uma falha da automação.
+                let lastStatusBadge = '';
+                let lastErrorHint = '';
+
+                if (automation.last_summary) {
+                    const temErro = automation.last_summary.includes('com erro');
+                    lastStatusBadge = `<span class="badge ${temErro ? 'text-bg-warning text-dark' : 'text-bg-success'} ms-1">${automation.last_summary.split(',')[0]}</span>`;
+                    lastErrorHint = `<div class="small text-muted mt-1"><i class="bi bi-info-circle"></i> ${automation.last_summary}</div>`;
+                } else if (automation.last_status) {
+                    lastStatusBadge = `<span class="badge ${automation.last_status === 'success' ? 'text-bg-success' : 'text-bg-danger'} ms-1">${automation.last_status}</span>`;
+                    lastErrorHint = (automation.last_status !== 'success' && automation.last_error)
+                        ? `<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle"></i> ${automation.last_error}</div>`
+                        : '';
+                }
+
+                const activeBadge = automation.is_active
+                    ? '<span class="badge text-bg-success">Ativa</span>'
+                    : '<span class="badge text-bg-secondary">Inativa</span>';
+
+                const intervalLabel = formatIntervalSummary(automation.interval, automation.schedule_config);
+
+                const item = document.createElement('div');
+                item.className = 'list-group-item';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <strong>${automation.routine_name} (${automation.routine_id})</strong>
+                                ${activeBadge}
+                            </div>
+                            <div class="small text-muted">
+                                <i class="bi bi-clock"></i> Horário: <strong>${automation.execution_time}</strong>
+                                &nbsp;|&nbsp; Frequência: ${intervalLabel}
+                                &nbsp;|&nbsp; Última execução: ${lastExecution} ${lastStatusBadge}
+                            </div>
+                            ${lastErrorHint}
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="editAutomation(${automation.id})">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openRoutineEditorForAutomation(${automation.id})">
+                                <i class="bi bi-diagram-3"></i> Rotina / Mapa de Campos
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openExecutionLogsModal(${automation.id})">
+                                <i class="bi bi-list-ul"></i> Ver Logs
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="toggleAutomationActive(${automation.id}, ${automation.is_active ? 'true' : 'false'})">
+                                ${automation.is_active ? 'Desativar' : 'Ativar'}
+                            </button>
+                            <button id="execBtn-${automation.id}" class="btn btn-primary btn-sm" onclick="executeAutomationNow(${automation.id})" ${automation.is_active ? '' : 'disabled title="Ative a automação para executar"'}>Executar</button>
+                        </div>
+                    </div>
+                `;
+
+                listEl.appendChild(item);
+            });
+        }
+
+        async function executeAutomationNow(automationId) {
+            // A requisição abaixo só resolve quando o backend termina a
+            // automação de fato (a rota /execute é síncrona e bloqueia até
+            // o processo Selenium finalizar) — então o próprio `await` já
+            // serve como o "aguardar finalização" pedido; não é preciso
+            // fazer polling separado.
+            const btn = document.getElementById(`execBtn-${automationId}`);
+            const originalHtml = btn ? btn.innerHTML : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Executando...';
+            }
+
+            try {
+                const response = await fetch(`/api/automations/${automationId}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ headless: true }),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Automação executada com sucesso!');
+                } else {
+                    alert('Erro ao executar automação: ' + (result.error || JSON.stringify(result)));
+                }
+
+                if (currentDetailsCompanyId) {
+                    openDetailsModal(currentDetailsCompanyId);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao executar automação: ' + error.message);
+            } finally {
+                // Reabilita o botão independente do resultado (sucesso, erro
+                // de negócio ou falha de rede) — se `openDetailsModal` já
+                // reconstruiu a lista acima, isto apenas restaura um nó
+                // desconectado, sem efeito visual (inofensivo).
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
+
+        async function openExecutionLogsModal(automationId) {
+            const automation = automationsCache[automationId];
+            document.getElementById('executionLogsRoutineName').textContent = automation
+                ? `${automation.routine_name} (${automation.routine_id})`
+                : '';
+
+            const modalEl = document.getElementById('executionLogsModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+
+            const loadingEl = document.getElementById('executionLogsLoading');
+            const emptyEl = document.getElementById('executionLogsEmpty');
+            const listEl = document.getElementById('executionLogsList');
+
+            loadingEl.style.display = 'block';
+            emptyEl.style.display = 'none';
+            listEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`/api/logs/${automationId}`);
+                const logs = await response.json();
+
+                loadingEl.style.display = 'none';
+
+                if (!Array.isArray(logs) || logs.length === 0) {
+                    emptyEl.style.display = 'block';
+                    return;
+                }
+
+                logs.forEach(log => {
+                    const reports = log.result_data && Array.isArray(log.result_data.reports) ? log.result_data.reports : null;
+
+                    let statusBadge;
+                    let detailLine;
+
+                    if (reports) {
+                        // Geração em lote (campo 'select' com "lista de opções a ser
+                        // gerada"): faltar dados para algumas opções é normal e
+                        // varia a cada execução — não é uma "falha" da automação.
+                        const total = reports.length;
+                        const ok = reports.filter(r => r.downloaded_file).length;
+                        const semDados = reports.filter(r => r.sem_dados).length;
+                        const erro = total - ok - semDados;
+
+                        statusBadge = `<span class="badge ${erro > 0 ? 'text-bg-warning text-dark' : 'text-bg-success'}">${ok}/${total} baixado(s)</span>`;
+                        const partes = [`${ok}/${total} baixado(s)`];
+                        if (semDados) partes.push(`${semDados} sem dados no período`);
+                        if (erro) partes.push(`${erro} com erro`);
+                        detailLine = `<div class="small text-muted mt-1"><i class="bi bi-info-circle"></i> ${partes.join(', ')}</div>`;
+                    } else {
+                        const isSuccess = log.status === 'success';
+                        statusBadge = `<span class="badge ${isSuccess ? 'text-bg-success' : 'text-bg-danger'}">${log.status}</span>`;
+                        const details = [];
+                        if (log.result_data) {
+                            if (log.result_data.report_triggered !== undefined) {
+                                details.push(`Relatório acionado: ${log.result_data.report_triggered ? 'sim' : 'não'}`);
+                            }
+                            if (log.result_data.report_ready !== undefined) {
+                                details.push(`Relatório pronto: ${log.result_data.report_ready ? 'sim' : 'não'}`);
+                            }
+                            details.push(`CSV baixado: ${log.result_data.downloaded_file ? log.result_data.downloaded_file : 'não'}`);
+                        }
+                        detailLine = details.length ? `<div class="small text-muted mt-1">${details.join(' &nbsp;|&nbsp; ')}</div>` : '';
+                    }
+
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item';
+                    item.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div>${statusBadge} <span class="text-muted small ms-1">${formatDateBR(log.executed_at)}</span></div>
+                                ${(!reports && log.error_message) ? `<div class="small text-danger mt-1">${log.error_message}</div>` : ''}
+                                ${detailLine}
+                            </div>
+                            <div class="text-muted small">${log.duration_seconds ? log.duration_seconds.toFixed(1) + 's' : ''}</div>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                emptyEl.textContent = 'Erro ao carregar logs: ' + error.message;
+                emptyEl.style.display = 'block';
+            }
+        }
+
+        // Exemplo de chamada API
+        async function loadAutomations() {
+            try {
+                const response = await fetch('/api/automations');
+                const automations = await response.json();
+                console.log('Automacoes:', automations);
+            } catch (error) {
+                console.error('Erro ao carregar automacoes:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadAutomations();
+        });
+
+        // ====================================================================
+        // Editor de Rotinas / Mapa de Campos (item 5: CRUD + sub-CRUD)
+        // ====================================================================
+
+        // ====================================================================
+        // Mapa de Colunas de Relatório (CRUD de map_col_rel_rotina)
+        // ====================================================================
+
+        let mapColRotinasCache = {};
+        let mapColItemsCache = {};
+        let currentMapColRotinaId = null;
+        let currentEditingMapColId = null;
+
+        function openMapColRelModal() {
+            const modalEl = document.getElementById('mapColRelModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+
+            document.getElementById('mapColContent').style.display = 'none';
+            document.getElementById('mapColForm').style.display = 'none';
+            currentMapColRotinaId = null;
+            currentEditingMapColId = null;
+
+            loadMapColRotinaOptions();
+        }
+
+        async function loadMapColRotinaOptions() {
+            const select = document.getElementById('mapColRotinaSelect');
+            select.innerHTML = '<option value="">Selecione uma rotina...</option>';
+
+            try {
+                const response = await fetch('/api/rotinas-map');
+                const rotinas = await response.json();
+                mapColRotinasCache = {};
+                rotinas.forEach(r => {
+                    mapColRotinasCache[r.id] = r;
+                    const option = document.createElement('option');
+                    option.value = r.id;
+                    option.textContent = `${r.routine_id} - ${r.nome}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                alert('Erro ao carregar rotinas: ' + error.message);
+            }
+        }
+
+        async function onMapColRotinaChange() {
+            const select = document.getElementById('mapColRotinaSelect');
+            const id = select.value;
+            currentMapColRotinaId = id || null;
+            document.getElementById('mapColForm').style.display = 'none';
+            currentEditingMapColId = null;
+
+            if (!id) {
+                document.getElementById('mapColContent').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('mapColContent').style.display = 'block';
+            await loadMapColList(id);
+        }
+
+        async function loadMapColList(idRotina) {
+            const container = document.getElementById('mapColListContainer');
+            const emptyState = document.getElementById('mapColEmptyState');
+            container.innerHTML = '<div class="text-center text-muted py-3">Carregando...</div>';
+            emptyState.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/map-col-rel-rotina?id_rotina=${idRotina}`);
+                const items = await response.json();
+
+                mapColItemsCache = {};
+                container.innerHTML = '';
+
+                if (!items || items.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                items.forEach(item => {
+                    mapColItemsCache[item.id] = item;
+
+                    const el = document.createElement('div');
+                    el.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    el.innerHTML = `
+                        <div>
+                            <strong>${item.nome_rel}</strong>
+                            <span class="badge text-bg-secondary ms-1">${item.quant_col} coluna(s)</span>
+                            <span class="badge text-bg-light border text-dark ms-1">separador: "${item.split_col}"</span>
+                            <div class="small text-muted text-truncate" style="max-width: 500px;">${item.text_cabe}</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openMapColForm(${item.id})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteMapCol(${item.id})"><i class="bi bi-trash"></i></button>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            } catch (error) {
+                container.innerHTML = '';
+                emptyState.textContent = 'Erro ao carregar mapeamentos: ' + error.message;
+                emptyState.style.display = 'block';
+            }
+        }
+
+        function openMapColForm(mapColId) {
+            currentEditingMapColId = mapColId || null;
+            const item = mapColId ? mapColItemsCache[mapColId] : null;
+
+            document.getElementById('mapColFormTitle').textContent = item ? 'Editar Mapeamento' : 'Novo Mapeamento';
+            document.getElementById('mapColNomeRel').value = item ? item.nome_rel : '';
+            document.getElementById('mapColQuantCol').value = item ? item.quant_col : '';
+            document.getElementById('mapColSplitCol').value = item ? item.split_col : ';';
+            document.getElementById('mapColTextCabe').value = item ? item.text_cabe : '';
+
+            document.getElementById('mapColForm').style.display = 'block';
+            document.getElementById('mapColForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeMapColForm() {
+            document.getElementById('mapColForm').style.display = 'none';
+            currentEditingMapColId = null;
+        }
+
+        async function saveMapCol() {
+            const nomeRel = document.getElementById('mapColNomeRel').value.trim();
+            const quantCol = parseInt(document.getElementById('mapColQuantCol').value, 10);
+            const splitCol = document.getElementById('mapColSplitCol').value.trim();
+            const textCabe = document.getElementById('mapColTextCabe').value.trim();
+
+            if (!nomeRel || !quantCol || !splitCol || !textCabe) {
+                alert('Preencha todos os campos.');
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveMapColBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Salvando...';
+
+            try {
+                let response;
+                if (currentEditingMapColId) {
+                    response = await fetch(`/api/map-col-rel-rotina/${currentEditingMapColId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nome_rel: nomeRel, quant_col: quantCol, split_col: splitCol, text_cabe: textCabe }),
+                    });
+                } else {
+                    response = await fetch('/api/map-col-rel-rotina', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id_rotina: parseInt(currentMapColRotinaId, 10),
+                            nome_rel: nomeRel, quant_col: quantCol, split_col: splitCol, text_cabe: textCabe,
+                        }),
+                    });
+                }
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    closeMapColForm();
+                    await loadMapColList(currentMapColRotinaId);
+                } else {
+                    alert('Erro ao salvar: ' + (result.error || JSON.stringify(result)));
+                }
+            } catch (error) {
+                alert('Erro ao salvar: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar';
+            }
+        }
+
+        async function deleteMapCol(mapColId) {
+            if (!confirm('Remover este mapeamento?')) return;
+            try {
+                const response = await fetch(`/api/map-col-rel-rotina/${mapColId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    await loadMapColList(currentMapColRotinaId);
+                } else {
+                    const result = await response.json();
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+
+        let currentRoutineEditorMode = 'global'; // 'global' ou 'automation'
+        let currentRoutineEditorAutomationId = null;
+        let currentRotinaMapId = null;
+        let camposCache = {};
+        let currentEditingCampoId = null;
+
+        function openRoutineEditorGlobal() {
+            currentRoutineEditorMode = 'global';
+            currentRoutineEditorAutomationId = null;
+            showRoutineListView();
+            loadRoutineList();
+            routineEditorModal.show();
+        }
+
+        async function openRoutineEditorForAutomation(automationId) {
+            currentRoutineEditorMode = 'automation';
+            currentRoutineEditorAutomationId = automationId;
+            routineEditorModal.show();
+
+            try {
+                const response = await fetch(`/api/automations/${automationId}/rotina-map`);
+                const data = await response.json();
+
+                if (!data.rotina_map) {
+                    alert('Esta automação ainda não tem uma rotina associada.');
+                    routineEditorModal.hide();
+                    return;
+                }
+
+                showRoutineDetailView(data.rotina_map, data.campos);
+            } catch (error) {
+                alert('Erro ao carregar rotina da automação: ' + error.message);
+            }
+        }
+
+        function showRoutineListView() {
+            document.getElementById('routineListView').style.display = 'block';
+            document.getElementById('routineDetailView').style.display = 'none';
+        }
+
+        function showRoutineDetailView(rotinaMap, campos) {
+            currentRotinaMapId = rotinaMap.id;
+
+            document.getElementById('routineListView').style.display = 'none';
+            document.getElementById('routineDetailView').style.display = 'block';
+
+            document.getElementById('routineDetailNome').textContent = rotinaMap.nome;
+            document.getElementById('routineDetailCode').textContent = rotinaMap.routine_id;
+
+            const badges = [];
+            badges.push(rotinaMap.exclusivo
+                ? '<span class="badge text-bg-warning ms-2">Exclusiva</span>'
+                : '<span class="badge text-bg-success ms-2">Compartilhada</span>');
+            if (rotinaMap.num_automations !== undefined) {
+                badges.push(`<span class="badge text-bg-secondary ms-1">${rotinaMap.num_automations} automação(ões) usando</span>`);
+            }
+            document.getElementById('routineDetailBadges').innerHTML = badges.join('');
+
+            renderCamposList(campos);
+            closeCampoForm();
+
+            // O checkbox "exclusivo" só se aplica no modo automação, e só quando
+            // a rotina atual ainda é compartilhada (senão já está isolada).
+            const exclusivoWrapper = document.getElementById('campoExclusivoWrapper');
+            exclusivoWrapper.style.display =
+                (currentRoutineEditorMode === 'automation' && !rotinaMap.exclusivo) ? 'block' : 'none';
+        }
+
+        async function loadRoutineList() {
+            const container = document.getElementById('routineListContainer');
+            container.innerHTML = '<div class="text-center text-muted py-3">Carregando...</div>';
+
+            try {
+                const response = await fetch('/api/rotinas-map');
+                const rotinas = await response.json();
+
+                if (!rotinas || rotinas.length === 0) {
+                    container.innerHTML = '<div class="text-center text-muted py-3">Nenhuma rotina cadastrada ainda.</div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                rotinas.forEach(r => {
+                    const badge = r.exclusivo
+                        ? '<span class="badge text-bg-warning ms-2">Exclusiva</span>'
+                        : '<span class="badge text-bg-success ms-2">Compartilhada</span>';
+
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${r.nome}</strong>
+                            <span class="badge text-bg-secondary ms-1">${r.routine_id}</span>
+                            ${badge}
+                            <div class="small text-muted">${r.num_campos} campo(s) | usada por ${r.num_automations} automação(ões)</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openRoutineDetailGlobal(${r.id})">Ver Campos</button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteRoutine(${r.id})"><i class="bi bi-trash"></i></button>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                container.innerHTML = `<div class="text-danger">Erro ao carregar rotinas: ${error.message}</div>`;
+            }
+        }
+
+        async function openRoutineDetailGlobal(rotinaMapId) {
+            try {
+                const response = await fetch(`/api/rotinas-map/${rotinaMapId}`);
+                const rotinaMap = await response.json();
+                showRoutineDetailView(rotinaMap, rotinaMap.campos);
+            } catch (error) {
+                alert('Erro ao carregar rotina: ' + error.message);
+            }
+        }
+
+        function backToRoutineList() {
+            if (currentRoutineEditorMode === 'automation') {
+                routineEditorModal.hide();
+                return;
+            }
+            showRoutineListView();
+            loadRoutineList();
+        }
+
+        async function deleteRoutine(rotinaMapId) {
+            if (!confirm('Remover esta rotina e todos os seus campos mapeados? Automações que a usam ficarão sem rotina associada.')) return;
+            try {
+                const response = await fetch(`/api/rotinas-map/${rotinaMapId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadRoutineList();
+                } else {
+                    const result = await response.json();
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+
+        function renderCamposList(campos) {
+            const container = document.getElementById('camposListContainer');
+            const emptyState = document.getElementById('camposEmptyState');
+            container.innerHTML = '';
+            camposCache = {};
+
+            if (!campos || campos.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            campos.forEach(campo => {
+                camposCache[campo.id] = campo;
+
+                const item = document.createElement('div');
+                item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                item.innerHTML = `
+                    <div>
+                        <span class="badge text-bg-light border text-dark me-1">#${campo.ordem}</span>
+                        <strong>${campo.nome_campo}</strong>
+                        <span class="badge text-bg-secondary ms-1">${campo.tipo}</span>
+                        ${campo.gerar_lista_opcoes ? `<span class="badge text-bg-warning text-dark ms-1"><i class="bi bi-repeat"></i> ${campo.opcoes_modo === 'todas' ? 'todas as opções' : (campo.opcoes_lista || []).length + ' opção(ões)'}</span>` : ''}
+                        <div class="small text-muted">info_inserir: ${campo.info_inserir != null ? campo.info_inserir : '—'}</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="openCampoForm(${campo.id})"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteCampo(${campo.id})"><i class="bi bi-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        let campoOpcoesListaAtual = [];
+        let campoOpcoesModoAtual = 'manual';
+
+        function openCampoForm(campoId) {
+            currentEditingCampoId = campoId || null;
+            const campo = campoId ? camposCache[campoId] : null;
+
+            document.getElementById('campoFormTitle').textContent = campo ? 'Editar Campo' : 'Novo Campo';
+            document.getElementById('campoNomeCampo').value = campo ? campo.nome_campo : '';
+            document.getElementById('campoTipo').value = campo ? campo.tipo : 'select';
+            document.getElementById('campoSelect').value = campo ? campo.select : '';
+            document.getElementById('campoInfoInserir').value = campo ? (campo.info_inserir || '') : '';
+            document.getElementById('campoOrdem').value = campo ? campo.ordem : (Object.keys(camposCache).length + 1) * 10;
+            document.getElementById('campoExclusivo').checked = false;
+
+            document.getElementById('campoGerarLista').checked = campo ? !!campo.gerar_lista_opcoes : false;
+            campoOpcoesModoAtual = (campo && campo.opcoes_modo) ? campo.opcoes_modo : 'manual';
+            campoOpcoesListaAtual = (campo && Array.isArray(campo.opcoes_lista)) ? [...campo.opcoes_lista] : [];
+
+            onCampoTipoChange();
+
+            document.getElementById('campoForm').style.display = 'block';
+            document.getElementById('campoForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function onCampoTipoChange() {
+            const tipo = document.getElementById('campoTipo').value;
+            const hideInfo = (tipo === 'data' || tipo === 'botao');
+            document.getElementById('campoInfoInserirWrapper').style.display = hideInfo ? 'none' : 'block';
+
+            const isSelect = tipo === 'select';
+            document.getElementById('campoGerarListaWrapper').style.display = isSelect ? 'block' : 'none';
+            if (!isSelect) {
+                document.getElementById('campoGerarLista').checked = false;
+            }
+            onCampoGerarListaChange();
+
+            const help = document.getElementById('campoInfoInserirHelp');
+            if (tipo === 'checkbox') {
+                help.textContent = "Digite '1' para marcar o checkbox; deixe vazio para não marcar.";
+            } else if (tipo === 'radio') {
+                help.textContent = "Digite '1' para selecionar esta opção do grupo de radio; deixe vazio para não selecionar.";
+            } else {
+                help.textContent = '';
+            }
+        }
+
+        function onCampoGerarListaChange() {
+            const checked = document.getElementById('campoGerarLista').checked;
+            document.getElementById('campoListaOpcoesSection').style.display = checked ? 'block' : 'none';
+            if (checked) {
+                renderOpcoesLista();
+            }
+        }
+
+        function renderOpcoesLista() {
+            const container = document.getElementById('campoOpcoesListaContainer');
+            const help = document.getElementById('campoOpcoesListaHelp');
+            container.innerHTML = '';
+
+            function criarBadge(texto, classe, onRemover) {
+                const badge = document.createElement('span');
+                badge.className = `badge ${classe} d-inline-flex align-items-center gap-1`;
+                const label = document.createElement('span');
+                label.textContent = texto;
+                badge.appendChild(label);
+                if (onRemover) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn-close btn-close-white';
+                    removeBtn.style.fontSize = '.6em';
+                    removeBtn.onclick = onRemover;
+                    badge.appendChild(removeBtn);
+                }
+                container.appendChild(badge);
+            }
+
+            if (campoOpcoesModoAtual === 'todas') {
+                help.textContent = 'Modo: TODAS as opções existentes no select serão usadas em tempo de execução (uma automação por opção).';
+                criarBadge('Todas as opções que existir', 'text-bg-primary', voltarParaListaManual);
+                return;
+            }
+
+            help.textContent = campoOpcoesListaAtual.length
+                ? `Modo: lista manual (${campoOpcoesListaAtual.length} opção(ões)).`
+                : 'Adicione ao menos uma opção, ou use "Todas as opções que existir".';
+
+            campoOpcoesListaAtual.forEach((opcao, index) => {
+                criarBadge(opcao, 'text-bg-secondary', () => removerOpcaoLista(index));
+            });
+        }
+
+        function adicionarOpcaoLista() {
+            const input = document.getElementById('campoNovaOpcao');
+            const valor = input.value.trim();
+            if (!valor) return;
+
+            campoOpcoesModoAtual = 'manual';
+            if (!campoOpcoesListaAtual.includes(valor)) {
+                campoOpcoesListaAtual.push(valor);
+            }
+            input.value = '';
+            renderOpcoesLista();
+        }
+
+        function removerOpcaoLista(index) {
+            campoOpcoesListaAtual.splice(index, 1);
+            renderOpcoesLista();
+        }
+
+        function usarTodasAsOpcoes() {
+            campoOpcoesModoAtual = 'todas';
+            campoOpcoesListaAtual = [];
+            renderOpcoesLista();
+        }
+
+        function voltarParaListaManual() {
+            campoOpcoesModoAtual = 'manual';
+            renderOpcoesLista();
+        }
+
+        function closeCampoForm() {
+            document.getElementById('campoForm').style.display = 'none';
+            currentEditingCampoId = null;
+        }
+
+        async function saveCampo() {
+            const nomeCampo = document.getElementById('campoNomeCampo').value.trim();
+            const tipo = document.getElementById('campoTipo').value;
+            const select = document.getElementById('campoSelect').value.trim();
+            const infoInserir = document.getElementById('campoInfoInserir').value.trim();
+            const ordem = parseInt(document.getElementById('campoOrdem').value || '10', 10);
+
+            if (!nomeCampo || !select) {
+                alert('Preencha o nome do campo e o seletor.');
+                return;
+            }
+
+            const gerarListaOpcoes = document.getElementById('campoGerarLista').checked;
+            if (gerarListaOpcoes && campoOpcoesModoAtual === 'manual' && campoOpcoesListaAtual.length === 0) {
+                alert('Adicione ao menos uma opção à lista, ou use "Todas as opções que existir".');
+                return;
+            }
+            const opcoesModo = gerarListaOpcoes ? campoOpcoesModoAtual : null;
+            const opcoesLista = (gerarListaOpcoes && campoOpcoesModoAtual === 'manual') ? campoOpcoesListaAtual : [];
+
+            const saveBtn = document.getElementById('saveCampoBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Salvando...';
+
+            try {
+                let response;
+
+                if (currentRoutineEditorMode === 'automation') {
+                    const tornarExclusivo = document.getElementById('campoExclusivo').checked;
+                    response = await fetch(`/api/automations/${currentRoutineEditorAutomationId}/campos-map-conf`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome_campo: nomeCampo,
+                            select: select,
+                            tipo: tipo,
+                            info_inserir: infoInserir,
+                            ordem: ordem,
+                            campo_id: currentEditingCampoId,
+                            tornar_exclusivo: tornarExclusivo,
+                            gerar_lista_opcoes: gerarListaOpcoes,
+                            opcoes_modo: opcoesModo,
+                            opcoes_lista: opcoesLista,
+                        }),
+                    });
+                } else if (currentEditingCampoId) {
+                    response = await fetch(`/api/campos-map-conf/${currentEditingCampoId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome_campo: nomeCampo, select: select, tipo: tipo, info_inserir: infoInserir, ordem: ordem,
+                            gerar_lista_opcoes: gerarListaOpcoes, opcoes_modo: opcoesModo, opcoes_lista: opcoesLista,
+                        }),
+                    });
+                } else {
+                    response = await fetch(`/api/rotinas-map/${currentRotinaMapId}/campos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome_campo: nomeCampo, select: select, tipo: tipo, info_inserir: infoInserir, ordem: ordem,
+                            gerar_lista_opcoes: gerarListaOpcoes, opcoes_modo: opcoesModo, opcoes_lista: opcoesLista,
+                        }),
+                    });
+                }
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    closeCampoForm();
+                    if (currentRoutineEditorMode === 'automation') {
+                        openRoutineEditorForAutomation(currentRoutineEditorAutomationId);
+                    } else {
+                        openRoutineDetailGlobal(currentRotinaMapId);
+                    }
+                } else {
+                    alert('Erro ao salvar campo: ' + (result.error || JSON.stringify(result)));
+                }
+            } catch (error) {
+                alert('Erro ao salvar campo: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar Campo';
+            }
+        }
+
+        async function deleteCampo(campoId) {
+            if (!confirm('Remover este campo mapeado?')) return;
+            try {
+                const response = await fetch(`/api/campos-map-conf/${campoId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    if (currentRoutineEditorMode === 'automation') {
+                        openRoutineEditorForAutomation(currentRoutineEditorAutomationId);
+                    } else {
+                        openRoutineDetailGlobal(currentRotinaMapId);
+                    }
+                } else {
+                    const result = await response.json();
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

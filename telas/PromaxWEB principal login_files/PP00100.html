@@ -1,0 +1,141 @@
+
+<!-- saved from url=(0067)https://dibrasa.promaxcloud.com.br/pw/cgi-bin/PP00100.exe?ppopcao=1 -->
+<html data-scribe-recorder-ready="true"><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><title>Promax</title>
+            
+            <script language="javascript">
+               function ValidaUsuario(){
+                   if( document.all.ssoLogin == "Y" ){
+                       return true;
+                   }
+                   if( document.all.ssoLogin == "F" ){
+                       return true;
+                   }
+                   if( document.all.Usuario.value == '' ){
+                       alert( 'Usuário inválido' );
+                       return false;
+                   }
+                   if( document.all.Senha.value == '' ){
+                       alert( 'Senha inválida' );
+                       return false;
+                   }
+               }
+               function ManutencaoAcessos(){
+                   var strURL = 'PP00100.exe?ppopcao=7&call=PW99939F&ssprx=12';
+                   var objWindow = window.open( strURL, "ManutAcessos", "top=0, left=0, width=790, height=542, scrollbars=no, status=no, toolbar=no, menubar=no, location=no, resizable=yes" );
+                   objWindow.focus();
+               }
+               function AlterarSenha(){
+                   var strURL = 'PP00100.exe?ppopcao=7&call=PW99940F&ssprx=12&parMultiFrame=idUsuario=filipe';
+                   var wNovaSenha = window.open( strURL, 'NovaSenha', "top=0, left=0, width=790, height=542, scrollbars=no, status=no, toolbar=no, menubar=no, location=no, resizable=yes" );
+                   wNovaSenha.focus();
+               }
+               function LoginSSO(){
+                   if (document.all.forceSSO.checked){
+                      document.all.ssoLogin.value = "F";
+                   }else{
+                      document.all.ssoLogin.value = "Y";
+                   };
+                   document.all.frmLogin.submit();
+               }
+            </script>
+            <link rel="stylesheet" href="./login.css" type="text/css">
+            <meta content="MSHTML 5.50.4807.2300" name="GENERATOR"></head>
+            <body language="javascript" background="https://dibrasa.promaxcloud.com.br/pw/cgi-bin/PP00100.exe?ppopcao=1" scroll="no" style="overflow-y: hidden;">
+            <div style="POSITION: absolute">
+            <img src="./img_canto.gif" border="0">
+            </div>
+            <table cellspacing="0" cellpadding="0" width="100%" border="0">
+              <tbody>
+              <tr>
+                <td height="4">
+              </td></tr><tr>
+                <td>
+                  <div style="position: absolute; FONT-WEIGHT: lighter; FONT-SIZE: 9px; COLOR: black; FONT-FAMILY: Verdana; LETTER-SPACING: 0px" align="left">
+                  &nbsp;&nbsp;PromaX Versão: 12.23.00.01
+                  <br>
+                  &nbsp;&nbsp;Base: 12.23
+                  <br>
+                  &nbsp;&nbsp;Engine: q
+                  </div>
+              </td></tr>
+              </tbody>
+            </table>
+            <br>
+            <table cellspacing="1" cellpadding="1" width="100%" border="0">
+              <tbody><tr>
+                <td width="33%"> &nbsp;
+                </td><td width="33%" align="center"> <img alt="AmBev" src="./logoLogon.gif">
+                </td><td width="33%" align="right" valign="top"> <img alt="PromaX" src="./PromaXlgn.gif">&nbsp;&nbsp;&nbsp;
+                                                      <br>
+                                                      <iframe id="iFrameNomeGeo" src="./PP00100(1).html" frameborder="0" scrolling="no" height="30" width="160"></iframe>&nbsp;&nbsp;&nbsp;&nbsp;
+            </td></tr></tbody></table>
+            <table style="WIDTH: 394px; HEIGHT: 33px" cellspacing="1" cellpadding="1" width="75" align="center" border="0">
+              <tbody>
+              <tr>
+                <td>
+                  <p style="FONT-SIZE: large" align="center"><font color="black">Login de Usuário</font> </p></td></tr></tbody></table>
+            <form name="frmLogin" method="post" onsubmit="ValidaUsuario();">
+             <input type="hidden" name="SessionID" value=""> <!--z0Ll5E53203805 here: newsession-->
+             <input type="hidden" name="ppopcao" value="1">
+             <input type="hidden" name="opcaomenu" value="">
+             <input type="hidden" name="call" value="">
+             <input type="hidden" name="versaoBase" value="12.23">
+             <input type="hidden" name="Animate" value="0">
+             <input type="hidden" name="animpath" value="">
+             <input type="hidden" name="ssoLogin" value="">
+            <table class="TableTop" style="WIDTH: 216px; HEIGHT: 70px" cellspacing="1" cellpadding="1" width="75" align="center" bgcolor="#6699cc" border="0">
+              <tbody>
+              <tr>
+                <td colspan="2" height="5">
+              </td></tr><tr>
+                <td style="FONT-FAMILY: ">
+                  <p align="right">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Usuário :&nbsp;
+                  </p></td>
+                <td><input id="" style="WIDTH: 102px; HEIGHT: 22px" maxlength="11" name="Usuario" value="filipe"></td>
+              </tr><tr>
+                <td>
+                  <p align="right">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Senha :&nbsp; </p></td>
+                <td><input id="" style="WIDTH: 102px; HEIGHT: 22px" type="password" maxlength="10" name="Senha"></td></tr>
+              <tr>
+                <td colspan="2">
+                  <center><p align="center">&nbsp;&nbsp;<input class="Btn" id="BtnConfirm" style="WIDTH: 90px; HEIGHT: 26px" type="submit" value="Confirma" border="0" name="cmdConfirma"></p></center></td></tr></tbody>
+              <tbody><tr>
+                <td colspan="2" height="5">
+       </td></tr></tbody></table>
+            <table style="WIDTH: 216px; HEIGHT: 45px" cellspacing="0" cellpadding="0" width="75" align="center" border="0">
+              <tbody><tr><td height="7">
+              </td></tr><tr id="BtnAlteraSenha"><td><a href="JavaScript:AlterarSenha()">
+                         <div class="Buttonic" style="WIDTH: 216px; HEIGHT: 19px" align="center">&nbsp;Alteração de Senha</div></a>
+              </td></tr><tr style="display: none">
+                  <td height="7">
+              </td></tr><tr style="display: none">
+                  <td><a href="JavaScript:ManutencaoAcessos()">
+                      <div class="Buttonic2" style="WIDTH: 216px; HEIGHT: 19px" align="center">&nbsp;Manutenção de Acessos</div></a>
+              <!-- Login SSO-->
+              </td></tr><tr style="display: none">
+                  <td height="7">
+              </td></tr><tr style="display: none">
+                  <td><span class="Buttonic2" style="WIDTH: 100px; HEIGHT: 19px; BACKGROUND-COLOR: gray" align="center" onclick="LoginSSO()">SSO Login</span>
+                      <input type="checkbox" id="forceSSO" name="forceSSO" value="S"><span style="color:black;FONT-SIZE: xx-small;font-weight:normal">Outro Usuario
+            </span></td></tr></tbody></table>
+            <br>
+       </form>
+            <table style="WIDTH: 162px; HEIGHT: 4px" cellspacing="1" cellpadding="1" width="75%" align="center" background="https://dibrasa.promaxcloud.com.br/pw/cgi-bin/PP00100.exe?ppopcao=1" border="0">
+              <tbody><tr><td height="7">
+              </td></tr><tr><td><div align="center"><img alt="" src="./logo_meio.gif"></div>
+              <!--
+              <TR><TD>&nbsp;
+              <TR><TD>&nbsp;
+              <TR><TD align=center><FONT color="#0000ff" style="cursor: hand" onClick="ManutencaoAcessos();"><U>Manutenção de Acessos</U></FONT>
+              -->
+            </td></tr></tbody></table>
+       <script for="window" event="onload">
+       //  if( 0 == 1 && 00000 == 82 ){
+       //      document.all.BtnAlteraSenha.style.display = 'none';
+       //  }
+           var aIP = document.location.href.split( "/" );
+           var strURL = "PP00100.exe?ppopcao=13&ipUNB=" + aIP[2];
+           document.all.iFrameNomeGeo.src = strURL;
+           document.all.Usuario.focus();
+       </script>
+</body></html>

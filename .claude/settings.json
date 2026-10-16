@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\Users\\\\Rodrigo\\\\Documents\\\\lifeCTI\\\\promax\\\\venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\Rodrigo\\\\Documents\\\\lifeCTI\\\\promax\\\\_fix_checkboxes.py\")",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(venv/Scripts/python.exe _test_log_persist.py)",
+      "Bash(python3 -)",
+      "Bash(node --check _extracted.js)",
+      "Bash(rm -f _extracted.js)",
+      "Bash(venv/Scripts/python.exe -)",
+      "Bash(venv/Scripts/python.exe _test_multi_option.py)",
+      "Bash(venv/Scripts/python.exe -c \"import src.automation.base; print\\('IMPORT OK'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"import src.ui.app; print\\('IMPORT OK'\\)\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue)",
+      "Bash(.venv/Scripts/python.exe main.py --web)",
+      "Read(//tmp/**)",
+      "Bash(sleep 3 && cat /tmp/promax_web.log 2>/dev/null)"
+    ]
+  }
+}

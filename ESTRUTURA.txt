@@ -1,0 +1,319 @@
+PromaX Automation Suite - Estrutura Final do Projeto
+=====================================================
+
+promax/
+│
+├── 📖 DOCUMENTAÇÃO
+│   ├── README.md                    [Documentação principal]
+│   ├── CLAUDE.md                    [Instruções para Claude Code]
+│   ├── GUIA_RAPIDO.md              [Guia em português]
+│   ├── ARQUITETURA.md              [Diagramas e design]
+│   ├── INSTALACAO.md               [Passo a passo instalação]
+│   ├── STATUS.md                   [Status detalhado do projeto]
+│   ├── SUMMARY.md                  [Resumo executivo]
+│   └── ESTRUTURA.txt               [Este arquivo]
+│
+├── ⚙️  CONFIGURAÇÃO
+│   ├── requirements.txt             [Dependências Python]
+│   ├── .env.example                [Variáveis de ambiente (exemplo)]
+│   ├── .gitignore                  [Regras git]
+│   │
+│   └── config/                     [Módulo de configuração]
+│       ├── __init__.py
+│       ├── settings.py             [Constantes, logging, timouts]
+│       └── database.py             [Modelos SQLAlchemy, CRUD]
+│
+├── 🚀 CÓDIGO-FONTE PRINCIPAL
+│   │
+│   ├── src/__init__.py             [Init principal]
+│   │
+│   ├── src/browser/                [Gerenciamento de navegador]
+│   │   ├── __init__.py
+│   │   ├── driver.py               [DriverManager + WebDriver]
+│   │   └── waits.py                [TODO: Helpers de espera]
+│   │
+│   ├── src/automation/             [Engine de automação]
+│   │   ├── __init__.py             [Registry de rotinas]
+│   │   ├── base.py                 [BaseRoutine - classe base]
+│   │   ├── login.py                [PromaXLogin - automação de login]
+│   │   ├── executor.py             [TaskExecutor - executor com retry]
+│   │   ├── scheduler.py            [TODO: APScheduler integration]
+│   │   │
+│   │   └── routines/               [Rotinas específicas]
+│   │       ├── __init__.py
+│   │       ├── routine_template.py [Template para novas rotinas]
+│   │       └── routine_14_05_05.py [Exemplo: Lançamentos]
+│   │
+│   └── src/ui/                     [Interface de usuário]
+│       ├── __init__.py
+│       ├── app.py                  [Flask app + API REST]
+│       │
+│       ├── templates/              [Templates HTML]
+│       │   ├── dashboard.html      [Dashboard principal]
+│       │   ├── company_form.html   [TODO: Formulário de empresa]
+│       │   └── automation_config.html [TODO: Configuração de automação]
+│       │
+│       └── static/                 [Assets estáticos]
+│           ├── css/
+│           │   └── style.css       [TODO: Estilos CSS]
+│           └── js/
+│               └── app.js          [TODO: JavaScript frontend]
+│
+├── 🧪 TESTES
+│   ├── __init__.py
+│   ├── test_example.py             [Testes de exemplo]
+│   ├── test_login.py               [TODO: Testes de login]
+│   └── test_routines.py            [TODO: Testes de rotinas]
+│
+├── 📊 DADOS E LOGS
+│   ├── data/                       [Banco de dados (gerado em runtime)]
+│   │   └── promax.db               [SQLite database]
+│   │
+│   └── logs/                       [Logs de execução]
+│       └── automation.log          [Log principal]
+│
+├── 📷 REFERÊNCIA (LEGACY)
+│   └── telas/                      [Telas capturadas do PromaX]
+│       ├── Lançamentos rotina14.05.05.html
+│       └── ...
+│
+└── 🎯 PONTO DE ENTRADA
+    └── main.py                     [Script principal com múltiplos modos]
+                                    [Modo: teste | web | executor]
+
+═══════════════════════════════════════════════════════════════════════
+
+RESUMO DE ARQUIVOS
+═══════════════════════════════════════════════════════════════════════
+
+Documentação:         5 arquivos
+Configuração:        2 arquivos + 1 diretório
+Navegador:           2 arquivos + 1 diretório
+Automação:           5 arquivos + 2 diretórios (1 com exemplo)
+Interface:           3 arquivos + 2 diretórios
+Testes:              2 arquivos + 1 diretório
+Dados:               2 diretórios
+Referência:          1 diretório
+Ponto de Entrada:    1 arquivo
+─────────────────────────────────────
+TOTAL:              35+ arquivos | 3.800+ linhas de código
+
+═══════════════════════════════════════════════════════════════════════
+
+ARQUIVOS PRINCIPAIS PARA COMEÇAR
+═══════════════════════════════════════════════════════════════════════
+
+1. Para instalar:
+   → INSTALACAO.md
+   → requirements.txt
+   → .env.example
+
+2. Para entender:
+   → README.md
+   → ARQUITETURA.md
+   → GUIA_RAPIDO.md
+
+3. Para usar:
+   → main.py (executar diferentes modos)
+   → src/automation/routines/routine_template.py (criar rotinas)
+   → src/ui/app.py (interface web)
+
+4. Para referenciar:
+   → src/automation/base.py (métodos disponíveis)
+   → config/settings.py (constantes globais)
+   → STATUS.md (status detalhado)
+
+═══════════════════════════════════════════════════════════════════════
+
+ESTRUTURA DO BANCO DE DADOS
+═══════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────┐
+│          COMPANIES                  │
+├─────────────────────────────────────┤
+│ id (PK)                             │
+│ name                                │
+│ promax_url                          │
+│ username                            │
+│ password_encrypted                  │
+│ unit                                │
+│ is_active                           │
+│ created_at / updated_at             │
+└─────────────────────────────────────┘
+         ↓ (1:N)
+┌─────────────────────────────────────┐
+│        AUTOMATIONS                  │
+├─────────────────────────────────────┤
+│ id (PK)                             │
+│ company_id (FK)                     │
+│ routine_id                          │
+│ routine_name                        │
+│ is_active                           │
+│ start_date / execution_time         │
+│ interval / max_retries              │
+│ last_execution / last_status        │
+│ created_at / updated_at             │
+└─────────────────────────────────────┘
+         ↓ (1:N)
+┌─────────────────────────────────────┐
+│       EXECUTION_LOGS                │
+├─────────────────────────────────────┤
+│ id (PK)                             │
+│ automation_id (FK)                  │
+│ company_id (FK)                     │
+│ executed_at                         │
+│ status (success/failed/retry)       │
+│ processed_count / error_count       │
+│ error_message                       │
+│ duration_seconds / retry_count      │
+└─────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+FLUXO DE EXECUÇÃO
+═══════════════════════════════════════════════════════════════════════
+
+1. USUÁRIO / SCHEDULER
+   ↓
+2. main.py --web (interface)
+   ↓
+3. src/ui/app.py (Flask routes)
+   ↓
+4. src/automation/executor.py (TaskExecutor)
+   ↓
+5. src/automation/login.py (PromaXLogin)
+   ↓
+6. src/automation/routines/routine_XX_XX_XX.py (Rotina específica)
+   ↓
+7. src/browser/driver.py (WebDriver Selenium)
+   ↓
+8. PROMAX CLOUD (dibrasa.promaxcloud.com.br)
+   ↓
+9. config/database.py (Resultado persistido)
+   ↓
+10. Dashboard atualizado
+
+═══════════════════════════════════════════════════════════════════════
+
+PADRÕES DE DESIGN UTILIZADOS
+═══════════════════════════════════════════════════════════════════════
+
+✓ Abstract Base Class (ABC)
+  Arquivo: src/automation/base.py
+  Uso: BaseRoutine para herança de rotinas
+
+✓ Factory Pattern
+  Arquivo: src/automation/__init__.py
+  Uso: get_routine_class() para criar rotinas
+
+✓ Registry Pattern
+  Arquivo: src/automation/__init__.py
+  Uso: AVAILABLE_ROUTINES dicionário
+
+✓ Singleton Pattern
+  Arquivo: src/browser/driver.py
+  Uso: DriverManager como gerenciador único
+
+✓ Context Manager Pattern
+  Arquivo: src/browser/driver.py
+  Uso: with create_context_driver() as driver:
+
+✓ Dependency Injection
+  Arquivo: Todos
+  Uso: Passagem de driver, logger, config
+
+✓ Repository Pattern
+  Arquivo: config/database.py
+  Uso: DatabaseService como repositório
+
+✓ Service Layer Pattern
+  Arquivo: src/automation/executor.py
+  Uso: TaskExecutor orquestra tarefas
+
+═══════════════════════════════════════════════════════════════════════
+
+COMO NAVEGAR O PROJETO
+═══════════════════════════════════════════════════════════════════════
+
+Para ENTENDER a arquitetura:
+  1. Leia: ARQUITETURA.md
+  2. Estude: src/automation/base.py
+  3. Explore: src/automation/executor.py
+
+Para IMPLEMENTAR uma rotina:
+  1. Copie: routine_template.py
+  2. Renomeie para: routine_XX_XX_XX.py
+  3. Edite a classe: Implemente execute()
+  4. Registre: Em src/automation/__init__.py
+
+Para USAR a interface:
+  1. Execute: python main.py --web
+  2. Abra: http://localhost:5000
+  3. Crie empresa, automação, execute
+
+Para ESTENDER o framework:
+  1. Implemente: scheduler.py com APScheduler
+  2. Adicione: Múltiplos browsers
+  3. Crie: Testes com pytest
+  4. Faça: Deploy com Docker
+
+═══════════════════════════════════════════════════════════════════════
+
+COMANDOS ÚTEIS
+═══════════════════════════════════════════════════════════════════════
+
+# Instalação
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+
+# Testes
+python main.py                    # Teste simples
+python main.py --web              # Interface web
+python main.py --executor          # Teste executor
+python main.py --init-db           # Iniciar BD
+
+# Desenvolvimento
+code .                            # Abrir VS Code
+pytest                            # Rodar testes
+python -m flake8 src/             # Lint
+python -m black src/              # Formatter
+
+═══════════════════════════════════════════════════════════════════════
+
+PRÓXIMAS FASES (TODO)
+═══════════════════════════════════════════════════════════════════════
+
+FASE 1: Agendamento (APScheduler)
+  □ Implementar: src/automation/scheduler.py
+  □ Integrar com Flask
+  □ UI para visualizar agendamentos
+
+FASE 2: Melhorias UI
+  □ Templates HTML completos
+  □ Dashboard com gráficos
+  □ Autenticação de usuários
+
+FASE 3: Robustez
+  □ Testes 100%
+  □ Suporte múltiplos browsers
+  □ Paralelização
+
+FASE 4: Produção
+  □ Docker + docker-compose
+  □ CI/CD (GitHub Actions)
+  □ Migrations com Alembic
+  □ Health checks
+
+═══════════════════════════════════════════════════════════════════════
+
+CONTATO & SUPORTE
+═══════════════════════════════════════════════════════════════════════
+
+Email: rodrigo@lifecti.com.br
+Docs: README.md, GUIA_RAPIDO.md, INSTALACAO.md
+Issues: Consulte STATUS.md para problemas conhecidos
+
+═══════════════════════════════════════════════════════════════════════
+
+FIM DA ESTRUTURA

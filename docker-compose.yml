@@ -1,0 +1,117 @@
+services:
+  vpn:
+    build:
+      context: ./vpn
+    image: promax-vpn:latest
+    container_name: promax-vpn
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+    # Porta do app fica aqui: quem "é dono" da stack de rede publica a porta
+    # (promax, abaixo, compartilha esta stack via network_mode: service:vpn).
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    secrets:
+      - vpn_psk
+      - vpn_xauth_user
+      - vpn_xauth_password
+    volumes:
+      - ./vpn/runtime:/vpn-runtime
+    networks:
+      - promax_net
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  promax:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: promax-automation:latest
+    container_name: promax-automation
+    restart: unless-stopped
+    # Compartilha a stack de rede do container vpn (interfaces, rotas,
+    # inclusive a interface/SA criada pelo strongSwan) — por isso não declara
+    # "ports" nem "networks" aqui (ver docstring do serviço vpn). Isso evita
+    # ter que rotear/NATear manualmente entre dois containers separados.
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      # Container Linux não suporta o modo edge_ie (VBScript/IE); força Chrome headless
+      - BROWSER=chrome
+      - HEADLESS=True
+      # Dentro da rede do compose, o Postgres é alcançado pelo nome do serviço,
+      # não por "localhost" (que dentro deste container aponta pra ele mesmo).
+      - POSTGRES_HOST=postgres
+      # DEV (Docker Desktop/Windows): o container não consegue rotear até a
+      # rede interna da API WKRADAR (172.20.5.0/24), mesmo com o WSL2 em modo
+      # de rede "mirrored" — limitação de isolamento de rede dos containers
+      # no Docker Desktop. Workaround: um proxy TCP passthrough rodando fora
+      # do Docker, direto no WSL2 (serviço systemd 'wkradar-proxy', porta
+      # 18443 -> 172.20.5.8:443), acessível daqui via host.docker.internal.
+      # Em produção (fora deste setup), REMOVER esta linha para usar o
+      # endpoint real direto (padrão em config/settings.py).
+      - WKRADAR_TOKEN_URL=https://host.docker.internal:18443/wk.api/api/v1/token
+    volumes:
+      # Mantém o SQLite (data/promax.db) e os arquivos baixados (data/arquivos)
+      # persistidos no host, inalterados por rebuilds da imagem.
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./src:/app/src
+      # Sem isto, toda vez que o container é recriado (ex: mudanças no
+      # serviço vpn, já que promax usa network_mode: service:vpn e é
+      # recriado em cascata) ele volta pra versão de config/ que estava
+      # BUILDADA NA IMAGEM — já causou "'Company' object has no attribute
+      # ..." mais de uma vez após editar config/database.py manualmente sem
+      # rebuildar a imagem.
+      - ./config:/app/config
+      # network_mode: service:vpn compartilha REDE, não filesystem — o vpn
+      # escreve o DNS a usar em /vpn-runtime/resolv.conf (ver vpn/entrypoint.sh);
+      # aqui ele é montado diretamente como /etc/resolv.conf deste container.
+      - ./vpn/runtime/resolv.conf:/etc/resolv.conf:ro
+
+  postgres:
+    image: postgres:15.3-alpine
+    container_name: promax-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    networks:
+      - promax_net
+
+networks:
+  promax_net:
+    driver: bridge
+
+secrets:
+  vpn_psk:
+    file: ./secrets/vpn_psk.txt
+  vpn_xauth_user:
+    file: ./secrets/vpn_xauth_user.txt
+  vpn_xauth_password:
+    file: ./secrets/vpn_xauth_password.txt

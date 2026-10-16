@@ -1,0 +1,13 @@
+[Unit]
+Description=Proxy TCP passthrough WSL2 -> API WKRADAR (172.20.5.8:443)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/wkradar-proxy/proxy.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

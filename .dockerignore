@@ -1,0 +1,37 @@
+# Ambientes virtuais e caches Python (reinstalados via requirements.txt na imagem)
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dados persistentes - nunca devem ir para dentro da imagem, só via volume
+data/
+logs/
+
+# Downloads/artefatos de execução e depuração
+downloads/
+*.log
+error_*.png
+screenshot_*.png
+target_screen_*.png
+_*.png
+_investigate_*.py
+
+# Ambiente/segredos locais
+.env
+.env.local
+.env.*.local
+
+# Controle de versão e docs
+.git/
+.gitignore
+*.md
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db

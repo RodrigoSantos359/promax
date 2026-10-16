@@ -1,0 +1,234 @@
+BODY
+{
+    FONT-SIZE: 8pt;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: #d3d3d3
+}
+LABEL
+{
+    FONT-SIZE: 8pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+A:active
+{
+    FONT-SIZE: 8pt;
+    COLOR: navy;
+    FONT-FAMILY: Arial;
+    TEXT-DECORATION: underline
+}
+A
+{
+    FONT-SIZE: 10pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+H5
+{
+    COLOR: white
+}
+H4
+{
+    FONT-SIZE: 10pt;
+    FONT-FAMILY: Arial
+}
+H2
+{
+    FONT-SIZE: 10pt;
+    FONT-FAMILY: Arial
+}
+.font7
+{
+    FONT-SIZE: 7pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+.font10
+{
+    FONT-SIZE: 10pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+.font8
+{
+    FONT-SIZE: 8pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+SELECT
+{
+    FONT-SIZE: 8pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+INPUT
+{
+    FONT-SIZE: 8pt;
+    COLOR: black;
+    FONT-FAMILY: Arial
+}
+.showdata
+{
+}
+.navlink
+{
+    FONT-SIZE: 8pt;
+    COLOR: maroon;
+    FONT-FAMILY: Arial
+}
+.navlink2
+{
+    FONT-SIZE: 7pt;
+    COLOR: #808080;
+    FONT-FAMILY: Arial
+}
+TH
+{
+    BACKGROUND-COLOR: lightgrey
+}
+.font8Promo
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: darkred;
+    FONT-FAMILY: Arial
+}
+.font8Disabled
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: #999999;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: #f1f1f1
+}
+.clsDisabled
+{
+    BACKGROUND-COLOR: #e6e6e6
+}
+.branco
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: #ebebeb;
+    FONT-FAMILY: Arial;
+    TEXT-DECORATION: none
+}
+.azulMenu
+{
+    FONT-WEIGHT: bolder;
+    COLOR: #003a6b
+}
+.azulBotao
+{
+    FONT-WEIGHT: bolder;
+    COLOR: white;
+    BACKGROUND-COLOR: midnightblue
+}
+.titulocampo
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: navy;
+    FONT-FAMILY: Arial;
+    TEXT-ALIGN: right
+}
+.TituloCampo2
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: navy;
+    FONT-FAMILY: Arial
+}
+.formulario
+{
+    BORDER-RIGHT: white thin outset;
+    BORDER-TOP: white thin outset;
+    BORDER-LEFT: white thin outset;
+    BORDER-BOTTOM: white thin outset;
+    BACKGROUND-COLOR: #d4d0c8
+}
+.listar_titulo
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: white;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: #666666
+}
+.listar_corpo_1
+{
+    FONT-SIZE: 8pt;
+    COLOR: navy;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: #e7e7e7
+}
+.listar_corpo_2
+{
+    FONT-SIZE: 8pt;
+    COLOR: navy;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: snow
+}
+.ListarCorpoWindow_1
+{
+    FONT-SIZE: 8pt;
+    COLOR: black;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: #dedede
+}
+.ListarCorpoWindow_2
+{
+    FONT-SIZE: 8pt;
+    COLOR: black;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: #d4d0c8
+}
+.botao
+{
+    HEIGHT: 21px
+}
+.campo
+{
+    BACKGROUND-COLOR: white
+}
+.combo
+{
+}
+.radio
+{
+}
+.memo
+{
+}
+.check
+{
+}
+.WindowScreen
+{
+    BACKGROUND-COLOR: #d4d0c8
+}
+.ListarTiluloWindow
+{
+    FONT-WEIGHT: bolder;
+    FONT-SIZE: 8pt;
+    COLOR: white;
+    FONT-FAMILY: Arial;
+    BACKGROUND-COLOR: black
+}
+.formularioRelat
+{
+    BORDER-RIGHT: 2px outset;
+    BORDER-TOP: 2px outset;
+    MARGIN: 1mm;
+    BORDER-LEFT: 2px outset;
+    BORDER-BOTTOM: 2px outset;
+    BACKGROUND-COLOR: #d4d0c8;
+    BORDERCOLORDARK: DimGray;
+    BORDERCOLORLIGHT: DimGray
+}
+.lista
+{
+    FONT-SIZE: 9pt;
+    COLOR: navy;
+    FONT-FAMILY: 'Courier New'
+}

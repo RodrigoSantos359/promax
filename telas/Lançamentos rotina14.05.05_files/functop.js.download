@@ -1,0 +1,49 @@
+var timeOut = 0;
+function ExibeErroFrm(){
+	var rotina = '';
+	timeOut = 0;
+	document.parentWindow.parent.rotina.document.all.imgWait.style.display = 'none';
+	try{
+		rotina = document.all.rotinaExec.outerText; }
+	catch( e ){
+		rotina = window.parent.document.title;
+	}
+	var strURL = '../scripts/werrocbl.html?programa=' + rotina;
+	var windowErroCbl = window.open( strURL, 'winErroCbl', "top=100,left=150,height=400,width=500,status=no,toolbar=no,menubar=no,location=no,titlebar=no" );
+	windowErroCbl.focus();
+}
+function BuscaErros(){
+	var pgHTML;
+	var timeOutDefined = document.parentWindow.parent.rotina.timeOutCtrl;
+	if( timeOutDefined == undefined ){
+		timeOutDefined = 120;
+	}
+	try{
+		pgHTML = document.parentWindow.parent.bottom_rotina.document.form1.innerHTML;
+	}
+	catch( e ){
+		try{
+			pgHTML = document.parentWindow.parent.bottom_rotina.document.body.innerHTML;
+		}
+		catch( e ){}
+	}
+	try{
+		if( pgHTML.search( '<!-- end program -->' ) >= 0 ){
+			timeOut = 0;
+		}
+		else{
+			timeOut++;
+		}
+		if( ( pgHTML.toUpperCase() ).search( 'EXECUTION ERROR' ) >= 0
+		||  ( pgHTML.toUpperCase() ).search( 'LOAD ERROR' ) >= 0 ){
+			ExibeErroFrm();
+		}
+		if( timeOut > timeOutDefined ){
+			ExibeErroFrm();
+		}
+	}
+	catch( e ){}
+	if( timeOut != 0 ){
+		window.setTimeout( 'BuscaErros()', 1000 );
+	}
+}

@@ -1,0 +1,299 @@
+# PromaX Automation Suite
+
+Automação elegante e escalável para processos no PromaX Cloud usando Python e Selenium.
+
+## 📋 Visão Geral
+
+Este projeto fornece um framework robusto para automação de tarefas repetitivas no PromaX Cloud (https://dibrasa.promaxcloud.com.br/), com:
+
+- **Interface web** para configuração de automatizações por empresa
+- **Agendamento** de tarefas com data, hora e retry automático
+- **Multi-empresa** com suporte a múltiplas unidades
+- **Extensível** para adicionar novas rotinas facilmente
+
+## 🏗️ Arquitetura
+
+```
+promax-automation/
+├── config/
+│   ├── __init__.py
+│   ├── settings.py                 # Variáveis globais
+│   └── database.py                 # Conexão com BD (SQLite)
+├── src/
+│   ├── __init__.py
+│   ├── browser/
+│   │   ├── __init__.py
+│   │   ├── driver.py               # Gerenciamento WebDriver (Selenium)
+│   │   └── waits.py                # Helpers para esperas explícitas
+│   ├── automation/
+│   │   ├── __init__.py
+│   │   ├── base.py                 # Classe base para automações
+│   │   ├── login.py                # Rotina de login
+│   │   └── routines/
+│   │       ├── __init__.py
+│   │       ├── routine_14_05_05.py # Exemplo: rotina 14.05.05
+│   │       └── routine_template.py # Template para novas rotinas
+│   ├── executor.py                 # Orquestrador de tarefas
+│   └── scheduler.py                # Agendamento de tarefas
+├── ui/
+│   ├── __init__.py
+│   ├── app.py                      # Aplicação Flask/Tkinter
+│   ├── templates/
+│   │   ├── dashboard.html          # Dashboard principal
+│   │   ├── company_form.html       # Formulário de empresa
+│   │   └── automation_config.html  # Configuração de automação
+│   └── static/
+│       ├── css/
+│       │   └── style.css
+│       └── js/
+│           └── app.js
+├── logs/
+│   └── automation.log              # Logs de execução
+├── data/
+│   └── promax.db                   # Banco de dados (SQLite)
+├── tests/
+│   ├── __init__.py
+│   ├── test_login.py
+│   └── test_routines.py
+├── requirements.txt
+├── .env.example
+├── main.py                         # Ponto de entrada
+└── README.md
+```
+
+## 🚀 Quickstart
+
+### Instalação
+
+```bash
+# Clone ou navegue até o diretório
+cd promax-automation
+
+# Crie um ambiente virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate  # Windows
+
+# Instale dependências
+pip install -r requirements.txt
+```
+
+### Configuração Inicial
+
+1. Copie `.env.example` para `.env`:
+```bash
+cp .env.example .env
+```
+
+2. Configure suas credenciais do PromaX:
+```env
+PROMAX_URL=https://dibrasa.promaxcloud.com.br/
+PROMAX_DEFAULT_USER=filipe
+PROMAX_DEFAULT_PASSWORD=Acene003
+```
+
+3. Inicie a aplicação:
+```bash
+python main.py
+```
+
+A interface web abrirá em `http://localhost:5000`
+
+## 📱 Interface Web
+
+### Dashboard Principal
+- Visualização de todas as automatizações ativas
+- Status de execução em tempo real
+- Logs das últimas execuções
+
+### Configuração por Empresa
+Formulário com campos:
+- **Nome da Empresa**
+- **Link do PromaX** (URL base da empresa)
+- **Login/Senha** (criptografado em BD)
+- **Unidade PromaX** (ex: 161.0001 - Dibrasa)
+- **Ativação** (Ativo/Inativo)
+
+### Configuração de Automação
+Para cada empresa, configure:
+- **Rotina** (dropdown com rotinas disponíveis)
+- **Ativado** (checkbox)
+- **Data de Início** (quando a automação começa)
+- **Hora de Execução** (HH:MM)
+- **Intervalo** (diária, semanal, mensal)
+- **Máximo de Tentativas** (em caso de falha)
+- **Intervalo entre Tentativas** (segundos)
+
+## 🔌 Adicionando Novas Rotinas
+
+### 1. Crie um novo arquivo em `src/automation/routines/`
+
+```python
+# src/automation/routines/routine_XX_XX_XX.py
+
+from src.automation.base import BaseRoutine
+from src.browser.waits import wait_for_element
+
+class Routine14_05_05(BaseRoutine):
+    """
+    Rotina 14.05.05 - Lançamentos
+    
+    Responsável por: [descrever o que faz]
+    """
+    
+    ROUTINE_ID = "14.05.05"
+    ROUTINE_NAME = "Lançamentos"
+    ROUTINE_URL = "/pw/cgi-bin/PP00100.exe?SessionID={session}&ppopcao=7&call=140505000000&SubSessionID={subsession}"
+    
+    def execute(self):
+        """Executa a rotina principal"""
+        try:
+            self.logger.info(f"Iniciando {self.ROUTINE_NAME}")
+            
+            # Navegue até a rotina
+            self.navigate_to_routine()
+            
+            # Implemente sua lógica aqui
+            self._process_lancamentos()
+            
+            self.logger.info(f"{self.ROUTINE_NAME} concluída com sucesso")
+            return {"status": "success", "processed": 0}
+            
+        except Exception as e:
+            self.logger.error(f"Erro na {self.ROUTINE_NAME}: {str(e)}")
+            raise
+    
+    def _process_lancamentos(self):
+        """Lógica específica da rotina"""
+        # Exemplo: aguardar elemento de carregamento
+        table = wait_for_element(
+            self.driver, 
+            ("css_selector", ".TableTop"),
+            timeout=10
+        )
+        # ... sua automação aqui
+```
+
+### 2. Registre a rotina em `src/automation/__init__.py`
+
+```python
+from src.automation.routines.routine_14_05_05 import Routine14_05_05
+
+AVAILABLE_ROUTINES = {
+    "14.05.05": Routine14_05_05,
+    # Adicione novas rotinas aqui
+}
+```
+
+### 3. A rotina está pronta!
+
+Ela aparecerá automaticamente no dropdown de configuração.
+
+## 🔐 Credenciais e Segurança
+
+### Armazenamento
+- Senhas são **criptografadas** com `cryptography.Fernet`
+- Banco de dados usa **SQLite** (local)
+- Variáveis sensíveis em `.env` (não versionado)
+
+### Boas Práticas
+```python
+# ✅ Correto
+from config.settings import get_encrypted_password
+password = get_encrypted_password(company_id)
+
+# ❌ Não faça
+password = "senha_hardcoded"
+```
+
+## 📊 Banco de Dados
+
+### Tabelas Principais
+
+```sql
+-- Empresas
+CREATE TABLE companies (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    promax_url TEXT NOT NULL,
+    username TEXT NOT NULL,
+    password_encrypted TEXT NOT NULL,
+    unit TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Automações
+CREATE TABLE automations (
+    id INTEGER PRIMARY KEY,
+    company_id INTEGER NOT NULL,
+    routine_id TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT 1,
+    start_date DATE NOT NULL,
+    execution_time TEXT NOT NULL,  -- HH:MM
+    interval TEXT NOT NULL,        -- 'daily', 'weekly', 'monthly'
+    max_retries INTEGER DEFAULT 3,
+    retry_delay INTEGER DEFAULT 60,
+    last_execution TIMESTAMP,
+    last_status TEXT,
+    created_at TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
+-- Logs de Execução
+CREATE TABLE execution_logs (
+    id INTEGER PRIMARY KEY,
+    automation_id INTEGER NOT NULL,
+    executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status TEXT,           -- 'success', 'failed', 'retry'
+    error_message TEXT,
+    duration_seconds FLOAT,
+    FOREIGN KEY (automation_id) REFERENCES automations(id)
+);
+```
+
+## 🧪 Testes
+
+```bash
+# Executar todos os testes
+pytest
+
+# Com cobertura
+pytest --cov=src
+
+# Apenas um arquivo
+pytest tests/test_login.py -v
+```
+
+## 📝 Logging
+
+Logs são salvos em `logs/automation.log`:
+
+```
+2024-01-15 14:30:45 - INFO - Iniciando Lançamentos (14.05.05)
+2024-01-15 14:30:52 - INFO - Login realizado com sucesso
+2024-01-15 14:31:10 - INFO - Lançamentos concluída com sucesso
+```
+
+## 🐛 Troubleshooting
+
+| Problema | Solução |
+|----------|---------|
+| `TimeoutException` ao logar | Aumente o timeout em `config/settings.py` |
+| Elemento não encontrado | Verifique seletores CSS em `inspection` da página |
+| Senha incorreta | Regenere credenciais criptografadas em `settings.py` |
+
+## 📚 Referências
+
+- **PromaX URL**: https://dibrasa.promaxcloud.com.br/
+- **Selenium Docs**: https://www.selenium.dev/documentation/
+- **Python Best Practices**: https://pep8.org/
+
+## 📄 Licença
+
+Propriedade da Dibrasa
+
+## 👤 Autor
+
+Desenvolvido por: Rodrigo (rodrigo@lifecti.com.br)
