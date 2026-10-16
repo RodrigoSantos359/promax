@@ -1,0 +1,77 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Secrets da VPN corporativa (PSK, usuário/senha XAuth) — nunca versionar
+secrets/*.txt
+vpn/runtime/*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+data/*.db
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Browser
+.chrome/
+chromedriver
+chromedriver.exe
+
+# Temporary
+*.tmp
+*.temp
+error_*.png
+*.png
+*.xlsx
+
+# OS
+Thumbs.db
+.AppleDouble
+.LSOverride
