@@ -57,7 +57,21 @@ def dashboard():
     try:
         companies = db.query(Company).filter(Company.is_active == True).all()
         total_automations = db.query(Automation).count()
-        return render_template("dashboard.html", companies=companies, total_automations=total_automations)
+
+        today_start = datetime.utcnow().date()
+        today_executions = db.query(ExecutionLog).filter(ExecutionLog.executed_at >= today_start).count()
+        today_success = db.query(ExecutionLog).filter(
+            ExecutionLog.executed_at >= today_start, ExecutionLog.status == "success"
+        ).count()
+        success_rate = round((today_success / today_executions) * 100) if today_executions else 0
+
+        return render_template(
+            "dashboard.html",
+            companies=companies,
+            total_automations=total_automations,
+            today_executions=today_executions,
+            success_rate=success_rate,
+        )
     finally:
         db.close()
 
@@ -811,7 +825,7 @@ def internal_error(error):
 def inject_globals():
     """Injeta variáveis globais nos templates."""
     return {
-        "app_name": "PromaX Automation Suite",
+        "app_name": "- PromaX Automation Suite",
         "version": "1.0.0",
         "year": datetime.utcnow().year,
     }

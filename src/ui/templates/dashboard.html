@@ -19,7 +19,7 @@
 
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #05b223f2 0%, #66c8ea 100%);
             min-height: 100vh;
         }
 
@@ -98,15 +98,15 @@
         <!-- Header -->
         <div class="app-header bg-white shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 mb-1">{{ app_name }}</h1>
+                <h1 class="h3 mb-1"><img width="30" height="30" src="https://img.icons8.com/nolan/64/p.png" alt="p"/><img width="30" height="30" src="https://img.icons8.com/nolan/64/a.png" alt="a"/><img width="30" height="30" src="https://img.icons8.com/nolan/64/s.png" alt="s"/>{{ app_name }}</h1>
                 <p class="text-muted mb-0">Sistema de automação elegante para PromaX Cloud</p>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-primary" onclick="openRoutineEditorGlobal()">
-                    <i class="bi bi-diagram-3"></i> Rotina / Mapa de Campos
+                    <i class=""><img width="30" height="30" src="https://img.icons8.com/nolan/64/flow-chart.png" alt="flow-chart"/></i> Rotina / Mapa de Campos
                 </button>
                 <button type="button" class="btn btn-outline-primary" onclick="openMapColRelModal()">
-                    <i class="bi bi-table"></i> Mapa de Colunas de Relatório
+                    <i class=""><img width="30" height="30" src="https://img.icons8.com/nolan/64/table-1.png" alt="table-1"/></i> Mapa de Colunas de Relatório
                 </button>
             </div>
         </div>
@@ -133,7 +133,7 @@
                 <div class="card stat-card shadow-sm text-center h-100">
                     <div class="card-body">
                         <h6 class="text-muted text-uppercase small mb-2">Execuções Hoje</h6>
-                        <div class="display-6 fw-bold">-</div>
+                        <div class="display-6 fw-bold">{{ today_executions }}</div>
                     </div>
                 </div>
             </div>
@@ -141,7 +141,7 @@
                 <div class="card stat-card shadow-sm text-center h-100">
                     <div class="card-body">
                         <h6 class="text-muted text-uppercase small mb-2">Taxa de Sucesso</h6>
-                        <div class="display-6 fw-bold">-</div>
+                        <div class="display-6 fw-bold">{{ success_rate }}%</div>
                     </div>
                 </div>
             </div>
@@ -153,7 +153,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="h5 mb-0">Empresas Configuradas</h2>
                     <button type="button" class="btn btn-primary" onclick="openAddCompanyModal()">
-                        <i class="bi bi-plus-lg"></i> Adicionar Empresa
+                        <i class=""><img width="20" height="20" src="https://img.icons8.com/arcade/64/plus-math.png" alt="plus-math"/></i> Adicionar Empresa
                     </button>
                 </div>
 
@@ -359,7 +359,7 @@
                         <div class="d-flex justify-content-between align-items-center border-top pt-3">
                             <h6 class="mb-0">Automações</h6>
                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleNewAutomationForm()">
-                                <i class="bi bi-plus-lg"></i> Nova Automação
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/plus-math.png" alt="plus-math"/></i> Nova Automação
                             </button>
                         </div>
 
@@ -535,7 +535,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="mb-0">Mapeamentos cadastrados</h6>
                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="openMapColForm()">
-                                <i class="bi bi-plus-lg"></i> Novo Mapeamento
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/plus-math.png" alt="plus-math"/></i> Novo Mapeamento
                             </button>
                         </div>
 
@@ -587,7 +587,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-diagram-3"></i> Editor de Rotinas / Mapa de Campos
+                        <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/tree-structure.png" alt="tree-structure"/></i> Editor de Rotinas / Mapa de Campos
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -620,7 +620,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="mb-0">Campos Mapeados</h6>
                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCampoForm()">
-                                <i class="bi bi-plus-lg"></i> Novo Campo
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/plus-math.png" alt="plus-math"/></i> Novo Campo
                             </button>
                         </div>
 
@@ -1249,8 +1249,8 @@
             document.getElementById('detailsCompanyName').textContent = company.name;
 
             document.getElementById('detailsStatus').innerHTML = company.is_active
-                ? '<span class="badge text-bg-success">Ativa</span>'
-                : '<span class="badge text-bg-danger">Inativa</span>';
+                ? '<span class="badge text-bg-success"><i class="bi bi-check-circle"></i> Ativa</span>'
+                : '<span class="badge text-bg-danger"><i class="bi bi-x-circle"></i> Inativa</span>';
 
             document.getElementById('detailsUnit').textContent = company.unit;
             document.getElementById('detailsUsername').textContent = company.username;
@@ -1324,15 +1324,16 @@
                         </div>
                         <div class="d-flex gap-2 flex-wrap">
                             <button class="btn btn-outline-secondary btn-sm" onclick="editAutomation(${automation.id})">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/pencil.png" alt="pencil"/></i> Editar
                             </button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="openRoutineEditorForAutomation(${automation.id})">
-                                <i class="bi bi-diagram-3"></i> Rotina / Mapa de Campos
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/tree-structure.png" alt="tree-structure"/></i> Rotina / Mapa de Campos
                             </button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="openExecutionLogsModal(${automation.id})">
-                                <i class="bi bi-list-ul"></i> Ver Logs
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/bulleted-list.png" alt="bulleted-list"/></i> Ver Logs
                             </button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="toggleAutomationActive(${automation.id}, ${automation.is_active ? 'true' : 'false'})">
+                                <i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/lock.png" alt="lock"/></i>
                                 ${automation.is_active ? 'Desativar' : 'Ativar'}
                             </button>
                             <button id="execBtn-${automation.id}" class="btn btn-primary btn-sm" onclick="executeAutomationNow(${automation.id})" ${automation.is_active ? '' : 'disabled title="Ative a automação para executar"'}>Executar</button>
@@ -1583,8 +1584,8 @@
                             <div class="small text-muted text-truncate" style="max-width: 500px;">${item.text_cabe}</div>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="openMapColForm(${item.id})"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deleteMapCol(${item.id})"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openMapColForm(${item.id})"><i class=""><img width="30" height="30" src="https://img.icons8.com/arcade/64/pencil.png" alt="pencil"/></i></button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteMapCol(${item.id})"><i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/delete.png" alt="delete"/></i></button>
                         </div>
                     `;
                     container.appendChild(el);
@@ -1778,7 +1779,7 @@
                         </div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-outline-secondary btn-sm" onclick="openRoutineDetailGlobal(${r.id})">Ver Campos</button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deleteRoutine(${r.id})"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteRoutine(${r.id})"><i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/delete.png" alt="delete"/></i></button>
                         </div>
                     `;
                     container.appendChild(item);
@@ -1848,8 +1849,8 @@
                         <div class="small text-muted">info_inserir: ${campo.info_inserir != null ? campo.info_inserir : '—'}</div>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary btn-sm" onclick="openCampoForm(${campo.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-outline-danger btn-sm" onclick="deleteCampo(${campo.id})"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="openCampoForm(${campo.id})"><i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/pencil.png" alt="pencil"/></i></button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteCampo(${campo.id})"><i class=""><img width="24" height="24" src="https://img.icons8.com/arcade/64/delete.png" alt="delete"/></i></button>
                     </div>
                 `;
                 container.appendChild(item);
