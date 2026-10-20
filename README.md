@@ -89,8 +89,8 @@ cp .env.example .env
 2. Configure suas credenciais do PromaX:
 ```env
 PROMAX_URL=https://dibrasa.promaxcloud.com.br/
-PROMAX_DEFAULT_USER=filipe
-PROMAX_DEFAULT_PASSWORD=Acene003
+PROMAX_DEFAULT_USER=SEU_USUARIO_AQUI
+PROMAX_DEFAULT_PASSWORD=SUA_SENHA_AQUI
 ```
 
 3. Inicie a aplicação:
