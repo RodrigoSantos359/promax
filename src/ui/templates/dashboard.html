@@ -294,6 +294,12 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="bpoAceneToken" class="form-label" id="bpoAceneTokenLabel">Token API BPO ACENE</label>
+                            <input type="password" class="form-control" id="bpoAceneToken" name="bpo_acene_token" placeholder="Token emitido no BPO em Cadastros › Integrações" autocomplete="off">
+                            <div class="form-text" id="bpoAceneTokenHelp">Usado para enviar os relatórios 14.05.05, 12.06.04 e 12.04.07.03 ao BPO ACENE. Opcional.</div>
+                        </div>
+
                         <div class="text-center" id="formLoading" style="display: none;">
                             <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                             <span class="ms-2" id="formLoadingText">Adicionando empresa...</span>
@@ -757,6 +763,7 @@
             document.getElementById('passwordHelp').style.display = 'none';
             document.getElementById('senhaWkradarLabel').textContent = 'Senha WKRADAR';
             document.getElementById('senhaWkradarHelp').style.display = 'none';
+            document.getElementById('bpoAceneTokenHelp').textContent = 'Usado para enviar os relatórios 14.05.05, 12.06.04 e 12.04.07.03 ao BPO ACENE. Opcional.';
             // Testar conexão só faz sentido depois que a empresa já existe
             // (o token é obtido a partir do company_id já salvo no banco).
             document.getElementById('testWkradarWrapper').style.display = 'none';
@@ -788,6 +795,11 @@
                 document.getElementById('wkradarSection').style.display = company.has_wkradar ? 'block' : 'none';
                 document.getElementById('testWkradarResult').textContent = '';
                 document.getElementById('testWkradarWrapper').style.display = company.has_wkradar ? 'block' : 'none';
+
+                document.getElementById('bpoAceneToken').value = '';
+                document.getElementById('bpoAceneTokenHelp').textContent = company.has_bpo_acene
+                    ? 'Token já configurado. Deixe em branco para manter o atual.'
+                    : 'Nenhum token configurado: os relatórios não são enviados ao BPO ACENE.';
 
                 document.getElementById('companyModalTitle').textContent = 'Editar Empresa';
                 document.getElementById('submitCompanyBtn').textContent = 'Salvar Alterações';
@@ -859,6 +871,7 @@
                 base_empresa_wkradar: document.getElementById('baseEmpresaWkradar').value,
                 usuario_wkradar: document.getElementById('usuarioWkradar').value,
                 senha_wkradar: document.getElementById('senhaWkradar').value,
+                bpo_acene_token: document.getElementById('bpoAceneToken').value,
             };
 
             try {

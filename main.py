@@ -24,6 +24,7 @@ from src.automation.executor import TaskExecutor
 from src.automation.scheduler import AutomationScheduler, get_scheduler
 from src.automation.execution_queue import start_queue_worker
 from src.database.file_monitor import start_monitor
+from src.integrations.bpo_acene_outbox import start_bpo_monitor
 
 
 def test_automation():
@@ -83,6 +84,7 @@ def run_web_interface():
         # de monitoramento duas vezes.
         if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
             start_monitor()
+            start_bpo_monitor()
 
             # Agendador de automações (cron) + fila de execução: antes só
             # rodava via `python main.py --scheduler` num processo separado
@@ -127,6 +129,7 @@ def run_executor_test():
         # Inicializar banco de dados
         init_db()
         start_monitor()
+        start_bpo_monitor()
 
         # Criar empresa de teste
         company = DatabaseService.create_company(
@@ -179,6 +182,7 @@ def run_scheduler(automation_id: int = None):
     try:
         init_db()
         start_monitor()
+        start_bpo_monitor()
         start_queue_worker(logger=logger)
 
         scheduler = AutomationScheduler(logger=logger)

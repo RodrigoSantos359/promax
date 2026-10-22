@@ -218,6 +218,11 @@ def _insert_registros(arquivo, nome_tabela: str, colunas_reais: List[str], regis
         return "erro_processamento"
 
     logger.info(f"ArquivoBaixado {arquivo.id}: {len(registros)} linha(s) inserida(s) com sucesso na tabela '{nome_tabela}'")
+    # Antes de apagar o original: guarda uma cópia para envio à API BPO ACENE
+    # (só rotinas configuradas; nunca interrompe a importação).
+    from src.integrations.bpo_acene_outbox import enfileirar_arquivo
+
+    enfileirar_arquivo(arquivo)
     _finalize_importado(arquivo)
     return "removido"
 

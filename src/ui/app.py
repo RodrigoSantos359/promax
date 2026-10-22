@@ -114,6 +114,7 @@ def api_get_companies():
             "is_active": c.is_active,
             "created_at": to_utc_iso(c.created_at),
             "has_wkradar": bool(c.base_empresa_wkradar and c.usuario_wkradar and c.senha_wkradar),
+            "has_bpo_acene": bool(c.bpo_acene_token),
         } for c in companies])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -141,6 +142,8 @@ def api_get_company(company_id):
             "base_empresa_wkradar": company.base_empresa_wkradar,
             "usuario_wkradar": company.usuario_wkradar,
             "has_wkradar": bool(company.base_empresa_wkradar and company.usuario_wkradar and company.senha_wkradar),
+            # bpo_acene_token nunca é exposto — só se está configurado.
+            "has_bpo_acene": bool(company.bpo_acene_token),
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -163,6 +166,7 @@ def api_create_company():
             base_empresa_wkradar=data.get("base_empresa_wkradar"),
             usuario_wkradar=data.get("usuario_wkradar"),
             senha_wkradar=data.get("senha_wkradar"),
+            bpo_acene_token=data.get("bpo_acene_token") or None,
         )
 
         return jsonify({
@@ -193,6 +197,7 @@ def api_update_company(company_id):
             base_empresa_wkradar=data.get("base_empresa_wkradar"),
             usuario_wkradar=data.get("usuario_wkradar"),
             senha_wkradar=data.get("senha_wkradar") or None,
+            bpo_acene_token=data.get("bpo_acene_token") or None,
         )
 
         return jsonify({

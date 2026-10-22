@@ -59,6 +59,10 @@ class Company(Base):
     usuario_wkradar = Column(String(255), nullable=True)
     senha_wkradar = Column(Text, nullable=True)  # armazenada criptografada (Fernet), igual password_encrypted
     token_wkradar = Column(Text, nullable=True)
+    # Token de integração da API BPO ACENE (emitido por empresa no BPO, em
+    # Cadastros › Integrações). Credencial fixa — armazenada criptografada
+    # (Fernet) e nunca exposta pela API do painel.
+    bpo_acene_token = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -84,6 +88,26 @@ class Company(Base):
             return cipher.decrypt(self.senha_wkradar.encode()).decode()
         except Exception as e:
             logger.error(f"Erro ao descriptografar senha WKRADAR: {str(e)}")
+            raise
+
+    def set_bpo_acene_token(self, token: str) -> None:
+        """Criptografa e salva o token de integração da API BPO ACENE."""
+        try:
+            cipher = Fernet(ENCRYPTION_KEY.encode() if isinstance(ENCRYPTION_KEY, str) else ENCRYPTION_KEY)
+            self.bpo_acene_token = cipher.encrypt(token.encode()).decode()
+        except Exception as e:
+            logger.error(f"Erro ao criptografar token BPO ACENE: {str(e)}")
+            raise
+
+    def get_bpo_acene_token(self) -> Optional[str]:
+        """Descriptografa o token da API BPO ACENE (None se não configurado)."""
+        if not self.bpo_acene_token:
+            return None
+        try:
+            cipher = Fernet(ENCRYPTION_KEY.encode() if isinstance(ENCRYPTION_KEY, str) else ENCRYPTION_KEY)
+            return cipher.decrypt(self.bpo_acene_token.encode()).decode()
+        except Exception as e:
+            logger.error(f"Erro ao descriptografar token BPO ACENE: {str(e)}")
             raise
 
     def set_password(self, password: str) -> None:
@@ -394,6 +418,40 @@ class ArquivoBaixado(Base):
         )
 
 
+class EnvioBpo(Base):
+    """
+    Fila de envio de arquivos de relatório para a API BPO ACENE. Cada
+    registro aponta para uma CÓPIA do arquivo baixado (em
+    `BPO_ACENE_OUTBOX_DIR`), porque o original é apagado assim que a
+    importação no Postgres termina. Processada por
+    `src/integrations/bpo_acene_outbox.py`, com novas tentativas em caso de
+    falha de rede/servidor.
+    """
+
+    __tablename__ = "envios_bpo"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_empresa = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    id_rotina = Column(Integer, ForeignKey("rotinas_map.id"), nullable=True)
+    competencia = Column(String(7), nullable=False)  # AAAA-MM
+    caminho_arquivo = Column(String(500), nullable=False)
+    nome_arquivo = Column(String(255), nullable=False)  # nome original, enviado à API
+    # 'pendente', 'enviado', 'duplicado' (já recebido antes), 'rejeitado'
+    # (erro definitivo: 401/403/422...) ou 'erro' (esgotou as tentativas).
+    status = Column(String(20), nullable=False, default="pendente")
+    tentativas = Column(Integer, nullable=False, default=0)
+    proxima_tentativa = Column(DateTime, nullable=True)
+    http_status = Column(Integer, nullable=True)
+    lote_id = Column(Integer, nullable=True)
+    lote_status = Column(String(30), nullable=True)
+    mensagem = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    enviado_em = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<EnvioBpo(id={self.id}, competencia='{self.competencia}', status='{self.status}')>"
+
+
 def init_db() -> None:
     """Cria todas as tabelas no banco de dados e aplica migrações leves de colunas novas."""
     try:
@@ -456,6 +514,7 @@ def _migrate_add_missing_columns() -> None:
             "usuario_wkradar": "VARCHAR(255)",
             "senha_wkradar": "TEXT",
             "token_wkradar": "TEXT",
+            "bpo_acene_token": "TEXT",
         }
         for coluna, tipo_sql in novas_colunas_wkradar.items():
             if coluna not in companies_columns:
@@ -763,8 +822,9 @@ class DatabaseService:
         base_empresa_wkradar: str = None,
         usuario_wkradar: str = None,
         senha_wkradar: str = None,
+        bpo_acene_token: str = None,
     ) -> Company:
-        """Cria uma nova empresa (parâmetros WKRADAR são opcionais)."""
+        """Cria uma nova empresa (parâmetros WKRADAR e token BPO ACENE são opcionais)."""
         db = SessionLocal()
         try:
             company = Company(
@@ -778,6 +838,8 @@ class DatabaseService:
             company.set_password(password)
             if senha_wkradar:
                 company.set_senha_wkradar(senha_wkradar)
+            if bpo_acene_token:
+                company.set_bpo_acene_token(bpo_acene_token.strip())
             db.add(company)
             db.commit()
             db.refresh(company)
@@ -817,6 +879,20 @@ class DatabaseService:
             db.close()
 
     @staticmethod
+    def get_company_bpo_acene_token(company_id: int) -> Optional[str]:
+        """
+        Token da API BPO ACENE da empresa (já descriptografado), ou None se
+        não configurado. Usado só por `src/integrations/bpo_acene_outbox.py`
+        — nunca expor isto em uma resposta de API.
+        """
+        db = SessionLocal()
+        try:
+            company = db.query(Company).filter(Company.id == company_id).first()
+            return company.get_bpo_acene_token() if company else None
+        finally:
+            db.close()
+
+    @staticmethod
     def get_company_by_name(name: str) -> Company:
         """Obtém uma empresa pelo nome."""
         db = SessionLocal()
@@ -849,13 +925,14 @@ class DatabaseService:
         base_empresa_wkradar: str = None,
         usuario_wkradar: str = None,
         senha_wkradar: str = None,
+        bpo_acene_token: str = None,
     ) -> Company:
         """
         Atualiza os campos informados de uma empresa existente.
 
-        `password`/`senha_wkradar` só são alteradas se informadas (não
-        vazias) — permite editar os demais campos sem precisar redigitar as
-        senhas.
+        `password`/`senha_wkradar`/`bpo_acene_token` só são alteradas se
+        informadas (não vazias) — permite editar os demais campos sem
+        precisar redigitar as credenciais.
         """
         db = SessionLocal()
         try:
@@ -881,6 +958,8 @@ class DatabaseService:
                 company.usuario_wkradar = usuario_wkradar or None
             if senha_wkradar:
                 company.set_senha_wkradar(senha_wkradar)
+            if bpo_acene_token:
+                company.set_bpo_acene_token(bpo_acene_token.strip())
 
             db.commit()
             db.refresh(company)
@@ -1659,6 +1738,78 @@ class DatabaseService:
             registro.status = status
             db.commit()
             logger.info(f"ArquivoBaixado {arquivo_id}: status atualizado para '{status}'")
+        finally:
+            db.close()
+
+    @staticmethod
+    def create_envio_bpo(
+        id_empresa: int,
+        id_rotina: Optional[int],
+        competencia: str,
+        caminho_arquivo: str,
+        nome_arquivo: str,
+    ) -> "EnvioBpo":
+        """Registra um arquivo na fila de envio para a API BPO ACENE (status 'pendente')."""
+        db = SessionLocal()
+        try:
+            registro = EnvioBpo(
+                id_empresa=id_empresa,
+                id_rotina=id_rotina,
+                competencia=competencia,
+                caminho_arquivo=caminho_arquivo,
+                nome_arquivo=nome_arquivo,
+                status="pendente",
+                tentativas=0,
+            )
+            db.add(registro)
+            db.commit()
+            db.refresh(registro)
+            logger.info(
+                f"EnvioBpo {registro.id} enfileirado: id_empresa={id_empresa}, id_rotina={id_rotina}, "
+                f"competencia={competencia}, arquivo='{nome_arquivo}'"
+            )
+            return registro
+        finally:
+            db.close()
+
+    @staticmethod
+    def get_envios_bpo_prontos(agora: datetime) -> list:
+        """Envios pendentes cuja próxima tentativa já chegou (ou nunca tentados), do mais antigo ao mais novo."""
+        db = SessionLocal()
+        try:
+            return (
+                db.query(EnvioBpo)
+                .filter(EnvioBpo.status == "pendente")
+                .filter((EnvioBpo.proxima_tentativa == None) | (EnvioBpo.proxima_tentativa <= agora))  # noqa: E711
+                .order_by(EnvioBpo.id)
+                .all()
+            )
+        finally:
+            db.close()
+
+    @staticmethod
+    def get_envios_bpo(status: str = None, limit: int = 100) -> list:
+        """Lista os envios mais recentes para a API BPO ACENE (opcionalmente por status)."""
+        db = SessionLocal()
+        try:
+            query = db.query(EnvioBpo)
+            if status is not None:
+                query = query.filter(EnvioBpo.status == status)
+            return query.order_by(EnvioBpo.id.desc()).limit(limit).all()
+        finally:
+            db.close()
+
+    @staticmethod
+    def update_envio_bpo(envio_id: int, **campos) -> None:
+        """Atualiza campos de um envio (status, tentativas, lote, mensagem...)."""
+        db = SessionLocal()
+        try:
+            registro = db.query(EnvioBpo).filter(EnvioBpo.id == envio_id).first()
+            if not registro:
+                raise ValueError(f"EnvioBpo não encontrado: {envio_id}")
+            for campo, valor in campos.items():
+                setattr(registro, campo, valor)
+            db.commit()
         finally:
             db.close()
 

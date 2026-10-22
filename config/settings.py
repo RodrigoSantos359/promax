@@ -45,6 +45,21 @@ FILE_MANAGER_URL = os.getenv("FILE_MANAGER_URL", f"http://{urlparse(PROMAX_URL).
 # distro WSL2). Em produção (fora deste setup), usa o endpoint real direto.
 WKRADAR_TOKEN_URL = os.getenv("WKRADAR_TOKEN_URL", "https://172.20.5.8/wk.api/api/v1/token")
 
+# API BPO ACENE — recebe os relatórios do PromaX (arquivo original, como foi
+# baixado) para o sistema de integração contábil. Endereço base do servidor
+# (ex: https://bpo.acene.com.br); o caminho /api/bpo/promax é acrescentado
+# pelo client. Vazio = envio desligado. O token é por empresa (cadastro da
+# empresa, criptografado) — veja src/integrations/bpo_acene_client.py.
+BPO_ACENE_URL = os.getenv("BPO_ACENE_URL", "").rstrip("/")
+BPO_ACENE_VERIFY_SSL = os.getenv("BPO_ACENE_VERIFY_SSL", "True").lower() == "true"
+# Rotinas cujos arquivos são enviados, pelo código PromaX (separadas por vírgula).
+BPO_ACENE_ROTINAS = [
+    r.strip() for r in os.getenv("BPO_ACENE_ROTINAS", "14.05.05,12.06.04,12.04.07.03").split(",") if r.strip()
+]
+# Cópias dos arquivos aguardando envio (o original é apagado após a importação no Postgres).
+BPO_ACENE_OUTBOX_DIR = DATA_DIR / "envios_bpo"
+BPO_ACENE_OUTBOX_DIR.mkdir(exist_ok=True)
+
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR / 'promax.db'}")
 
