@@ -26,8 +26,8 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 # PromaX
 PROMAX_URL = os.getenv("PROMAX_URL", "https://dibrasa.promaxcloud.com.br/")
-PROMAX_DEFAULT_USER = os.getenv("PROMAX_DEFAULT_USER", "filipe")
-PROMAX_DEFAULT_PASSWORD = os.getenv("PROMAX_DEFAULT_PASSWORD", "Acene003")
+PROMAX_DEFAULT_USER = os.getenv("PROMAX_DEFAULT_USER")
+PROMAX_DEFAULT_PASSWORD = os.getenv("PROMAX_DEFAULT_PASSWORD")
 
 # Gerenciador de Arquivos — app separado (mesmas credenciais do PromaX) usado
 # para localizar/baixar arquivos que algumas rotinas (ex: 01.31.60) geram
