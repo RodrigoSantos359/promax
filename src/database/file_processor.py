@@ -170,23 +170,36 @@ def _finalize_importado(arquivo) -> None:
         logger.error(f"ArquivoBaixado {arquivo.id}: falha ao remover registro de 'arquivos_baixados': {e}")
 
 
-def _ja_importado(nome_tabela: str, arquivo) -> bool:
+def _ja_importado(nome_tabela: str, arquivo, registros: List[dict]) -> bool:
     """
-    Verifica se já existem linhas desta MESMA combinação `id_empresa` +
-    `id_rotina` + `data` na tabela dinâmica — ou seja, se este arquivo já foi
-    importado antes (reprocessamento manual, reexecução da automação para o
-    mesmo dia, ou a corrida entre o monitor em background e uma chamada
-    manual de `_process_pending()` já observada neste projeto). Evita
-    duplicar os mesmos dados na tabela.
+    Verifica se este arquivo já foi importado antes, para não duplicar linhas
+    na tabela dinâmica (reprocessamento manual, reexecução da automação para o
+    mesmo dia, ou a corrida entre o monitor e uma chamada manual).
+
+    A checagem é por `id_empresa` + `id_rotina` + `data`. Quando os registros
+    trazem a coluna `portador` (ex: extrato 12.04.07.03, que gera um arquivo
+    por portador no mesmo dia), a checagem também considera o portador: um
+    portador ainda não importado no dia não é considerado duplicado.
     """
-    query = sql_text(
-        f'SELECT 1 FROM "{nome_tabela}" '
-        "WHERE id_empresa = :id_empresa AND id_rotina = :id_rotina AND data = :data LIMIT 1"
-    )
+    portadores = sorted({str(r["portador"]).strip() for r in registros if r.get("portador")})
+    if portadores:
+        query = sql_text(
+            f'SELECT 1 FROM "{nome_tabela}" '
+            "WHERE id_empresa = :id_empresa AND id_rotina = :id_rotina AND data = :data "
+            "AND portador = ANY(:portadores) LIMIT 1"
+        )
+        params = {
+            "id_empresa": arquivo.id_empresa, "id_rotina": arquivo.id_rotina,
+            "data": arquivo.data, "portadores": portadores,
+        }
+    else:
+        query = sql_text(
+            f'SELECT 1 FROM "{nome_tabela}" '
+            "WHERE id_empresa = :id_empresa AND id_rotina = :id_rotina AND data = :data LIMIT 1"
+        )
+        params = {"id_empresa": arquivo.id_empresa, "id_rotina": arquivo.id_rotina, "data": arquivo.data}
     with postgres_engine.connect() as conn:
-        existe = conn.execute(
-            query, {"id_empresa": arquivo.id_empresa, "id_rotina": arquivo.id_rotina, "data": arquivo.data}
-        ).first()
+        existe = conn.execute(query, params).first()
     return existe is not None
 
 
@@ -197,7 +210,7 @@ def _insert_registros(arquivo, nome_tabela: str, colunas_reais: List[str], regis
         _finalize_importado(arquivo)
         return "removido"
 
-    if _ja_importado(nome_tabela, arquivo):
+    if _ja_importado(nome_tabela, arquivo, registros):
         logger.warning(
             f"ArquivoBaixado {arquivo.id}: já existem dados importados para id_empresa={arquivo.id_empresa}, "
             f"id_rotina={arquivo.id_rotina}, data={arquivo.data} em '{nome_tabela}' — pulando importação "

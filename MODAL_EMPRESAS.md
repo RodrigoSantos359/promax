@@ -29,7 +29,7 @@ A modal abrirá com os campos já preenchidos com:
 - **Nome:** Dibrasa
 - **URL:** https://dibrasa.promaxcloud.com.br/
 - **Usuário:** filipe
-- **Senha:** Acene003
+- **Senha:** SUA_SENHA_AQUI
 - **Unidade:** 161.0001 - Dibrasa
 
 ### 4. Editar ou Manter os Dados
@@ -56,6 +56,11 @@ Ao clicar em "Adicionar Empresa":
 | Usuário | Texto | Sim | Usuário de login |
 | Senha | Senha | Sim | Senha do usuário (criptografada) |
 | Unidade PromaX | Texto | Sim | Código da unidade (ex: 161.0001) |
+| Configurar API WKRADAR | Seção | Não | Base/Empresa, usuário e senha da API WK Radar (senha criptografada) |
+| Token API BPO ACENE | Senha | Não | Token de integração emitido no BPO (criptografado). Usado para enviar os relatórios ao BPO |
+
+O token do BPO nunca é exibido de volta: a tela mostra só se já está configurado.
+Ao editar, deixar o campo em branco mantém o token atual.
 
 ---
 
@@ -134,8 +139,9 @@ Adiciona uma nova empresa.
     "name": "Dibrasa",
     "promax_url": "https://dibrasa.promaxcloud.com.br/",
     "username": "filipe",
-    "password": "Acene003",
-    "unit": "161.0001 - Dibrasa"
+    "password": "SUA_SENHA_AQUI",
+    "unit": "161.0001 - Dibrasa",
+    "bpo_acene_token": "OPCIONAL_TOKEN_BPO"
 }
 ```
 
@@ -184,7 +190,7 @@ python main.py --web
 #    - Nome: Dibrasa
 #    - URL: https://dibrasa.promaxcloud.com.br/
 #    - Usuário: filipe
-#    - Senha: Acene003
+#    - Senha: SUA_SENHA_AQUI
 #    - Unidade: 161.0001 - Dibrasa
 
 # 5. Clique em "Adicionar Empresa"

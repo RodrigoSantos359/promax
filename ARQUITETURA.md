@@ -272,6 +272,26 @@ Dashboard atualiza status
 DriverManager.quit_driver()
 ```
 
+## Importação e envio ao BPO ACENE
+
+```
+PromaX ──(rotina: navega, preenche período, gera e baixa o CSV/INF)──▶ data/arquivos
+   │
+   ▼  ArquivoBaixadoMonitor (a cada 15 s)
+src/database/file_processor.py
+   ├─ reconhece o layout (cabeçalho ou largura fixa)
+   ├─ pula o que já existe no Postgres (data + portador)          ─┐
+   ├─ insere em rel_<id>_<código>_v1 (banco promax)                │
+   ├─ enfileira cópia do original (rotinas em BPO_ACENE_ROTINAS)  ─┤─▶ data/envios_bpo + tabela envios_bpo
+   └─ apaga o arquivo baixado                                      │
+                                                                   ▼  EnvioBpoMonitor (a cada 30 s)
+                                     POST {BPO_ACENE_URL}/api/bpo/promax/importacoes
+                                     (≤ 30/min · tentativas com espera · rejeições registradas)
+```
+
+Cada etapa é isolada: falha no envio não interrompe a importação, e falha na importação
+não gera envio.
+
 ## Componentes [TODO]
 
 - [ ] `src/automation/login.py` - Automação de login genérica

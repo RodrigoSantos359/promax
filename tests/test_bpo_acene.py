@@ -244,3 +244,12 @@ def test_token_fica_criptografado_no_banco(empresa):
     db_company = DatabaseService.get_company(empresa.id)
     assert db_company.bpo_acene_token != "token-de-teste"
     assert DatabaseService.get_company_bpo_acene_token(empresa.id) == "token-de-teste"
+
+
+def test_rotinas_padrao_enviadas_ao_bpo():
+    """Pagamentos, recebimentos, extrato, despesas por título, fornecedores e clientes."""
+    from config.settings import BPO_ACENE_ROTINAS
+
+    esperadas = {"14.05.05", "12.06.04", "12.04.07.03", "16.03.08", "01.20.04", "01.20.12"}
+    if os.getenv("BPO_ACENE_ROTINAS") is None:
+        assert set(BPO_ACENE_ROTINAS) == esperadas

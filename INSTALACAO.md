@@ -94,11 +94,15 @@ vim .env                        # Vim
 ```env
 PROMAX_URL=https://dibrasa.promaxcloud.com.br/
 PROMAX_DEFAULT_USER=filipe
-PROMAX_DEFAULT_PASSWORD=Acene003
+PROMAX_DEFAULT_PASSWORD=SUA_SENHA_AQUI
 DATABASE_URL=sqlite:///data/promax.db
 LOG_LEVEL=INFO
 FLASK_PORT=5000
 FLASK_DEBUG=True
+
+# Envio dos relatórios ao BPO ACENE (vazio = desligado)
+BPO_ACENE_URL=
+BPO_ACENE_VERIFY_SSL=True
 ```
 
 ### Passo 6: Verificar Instalação

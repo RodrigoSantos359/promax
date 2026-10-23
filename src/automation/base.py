@@ -450,6 +450,11 @@ class BaseRoutine(ABC):
         self.logger.info(f"Gerando {len(opcoes)} relatório(s) para o campo '{campo.nome_campo}': {opcoes}")
 
         results: List[Dict[str, Any]] = []
+        # Janela da tela de filtros: o relatório abre em outra janela, e é
+        # para cá que o robô deve voltar entre uma opção e outra.
+        self._filter_window = self.driver.current_window_handle
+        self._filter_url = self.driver.current_url
+        self.logger.info(f"Janelas abertas antes das opções: {len(self.driver.window_handles)}")
 
         for index, opcao in enumerate(opcoes):
             entry: Dict[str, Any] = {"opcao": opcao}
@@ -458,11 +463,22 @@ class BaseRoutine(ABC):
                 if element is None:
                     raise Exception(f"Campo '{campo.nome_campo}' não encontrado no frameset: ({by}, {value_locator})")
 
+                # Garante o período antes de cada portador: depois de um
+                # alerta ("Nenhuma informação" / "Data inválida") o PromaX pode
+                # limpar as datas mesmo com a tela de filtros já de volta.
+                if index:
+                    self.fill_configured_fields()
                 self._apply_field_value(element, "select", opcao, campo.select)
                 self.logger.info(f"Opção selecionada em '{campo.nome_campo}': {opcao!r} ({index + 1}/{len(opcoes)})")
 
+                # Relatórios de portadores grandes (ex: 237) levam mais que o
+                # padrão de 30s para exportar o CSV.
                 report_result = self.trigger_report_and_download(
-                    report_button_name, csv_button_name, report_ready_timeout=report_ready_timeout, rename_suffix=opcao
+                    report_button_name,
+                    csv_button_name,
+                    report_ready_timeout=report_ready_timeout,
+                    download_timeout=120,
+                    rename_suffix=opcao,
                 )
                 entry.update(report_result)
 
@@ -472,6 +488,11 @@ class BaseRoutine(ABC):
                 # (assíncrono) — ambos os casos indicam a mesma coisa: esta
                 # opção provavelmente não tem lançamentos no período.
                 if report_result.get("click_reason") == "alerta_bloqueado" and not report_result.get("alert_text"):
+                    entry["sem_dados"] = True
+                # "Nenhuma informação encontrada" é o alerta do PromaX para
+                # portador sem movimento no período: não é erro.
+                alerta = (report_result.get("alert_text") or "").lower()
+                if not report_result.get("downloaded_file") and "nenhuma informação" in alerta:
                     entry["sem_dados"] = True
 
             except UnexpectedAlertPresentException as e:
@@ -502,6 +523,10 @@ class BaseRoutine(ABC):
                 entry.update({"report_triggered": False, "report_ready": False, "downloaded_file": None, "error": str(e)})
                 self.logger.error(f"Erro ao gerar relatório para a opção '{opcao}' de '{campo.nome_campo}': {str(e)}")
 
+            # O relatório da opção abre em outra janela: fecha essa janela
+            # antes de qualquer outro comando, para não ficar preso nela.
+            self._fechar_janelas_de_relatorio()
+
             # Garante que nenhum alert nativo (ex: validação que rejeitou a
             # opção) fique pendente — um alert aberto bloqueia TODOS os
             # comandos WebDriver seguintes (inclusive o retorno à tela de
@@ -515,6 +540,48 @@ class BaseRoutine(ABC):
                 self._return_to_filter_screen(by, value_locator)
 
         return results
+
+    def _describe_window_current(self) -> str:
+        """Título e URL (curta) da janela atual, para diagnóstico."""
+        try:
+            return f"title={self.driver.title!r} url={self.driver.current_url[:140]!r}"
+        except Exception as e:
+            return f"(sem detalhes: {e})"
+
+    def _describe_windows(self) -> str:
+        """Lista as janelas abertas (título e URL), para diagnóstico. Volta para a janela atual."""
+        atual = self.driver.current_window_handle
+        partes = []
+        try:
+            for i, handle in enumerate(self.driver.window_handles):
+                self.driver.switch_to.window(handle)
+                marca = " (filtro)" if handle == getattr(self, "_filter_window", None) else ""
+                partes.append(f"[{i}]{marca} {self._describe_window_current()}")
+            self.driver.switch_to.window(atual)
+        except Exception as e:
+            return f"(falha ao listar: {e})"
+        return " | ".join(partes)
+
+    def _fechar_janelas_de_relatorio(self) -> None:
+        """
+        Fecha as janelas abertas pelo relatório (todas exceto a da tela de
+        filtros, guardada em `self._filter_window`) e volta para a tela de
+        filtros. Não faz novo login: é a mesma sessão.
+        """
+        filtro = getattr(self, "_filter_window", None)
+        if not filtro:
+            return
+        try:
+            for handle in list(self.driver.window_handles):
+                if handle == filtro:
+                    continue
+                self.driver.switch_to.window(handle)
+                self.driver.close()
+                self.logger.info("Janela do relatório fechada")
+            if filtro in self.driver.window_handles:
+                self.driver.switch_to.window(filtro)
+        except Exception as e:
+            self.logger.warning(f"Falha ao fechar janelas de relatório: {str(e)}")
 
     def _return_to_filter_screen(self, by, value_locator) -> bool:
         """
@@ -533,6 +600,30 @@ class BaseRoutine(ABC):
             bool: True se a tela de filtros foi restaurada (por um dos dois
                   caminhos), False se ambos falharem
         """
+        # O relatório abre em outra janela: fecha essas janelas e volta para a
+        # da tela de filtros. Se o select já estiver ali, não há nada a
+        # "voltar" (um history.back nessa janela tiraria a tela de filtros).
+        self._fechar_janelas_de_relatorio()
+
+        # Recarrega a URL da tela de filtros guardada no início, a cada
+        # portador (mesma sessão, sem novo login): começa de uma tela limpa,
+        # sem o estado deixado pelo alerta do portador anterior.
+        url_filtro = getattr(self, "_filter_url", None)
+        if url_filtro:
+            try:
+                self.driver.get(url_filtro)
+                self.wait_for_page_ready(timeout=15)
+                self._accept_pending_alert()
+                if wait_for_element_across_frames(self.driver, by, value_locator, timeout=10) is not None:
+                    # Recarregar a tela zera o período: preenche de novo.
+                    self.fill_configured_fields()
+                    return True
+            except Exception as e:
+                self.logger.warning(f"Falha ao recarregar a tela de filtros: {str(e)}")
+
+        if wait_for_element_across_frames(self.driver, by, value_locator, timeout=5) is not None:
+            return True
+
         try:
             switch_to_default(self.driver)
             self.driver.execute_script("window.history.back();")
@@ -551,7 +642,18 @@ class BaseRoutine(ABC):
         try:
             if not self.routine_id:
                 return False
-            self.navigate_via_shortcut(self.routine_id)
+            try:
+                self.navigate_via_shortcut(self.routine_id)
+            except Exception:
+                # Depois do alerta "Nenhuma informação encontrada" (portador
+                # sem movimento no período), a página sai da tela principal e
+                # o campo de atalho some: reabre a página inicial do PromaX
+                # (mesma sessão) e tenta o atalho de novo.
+                self.logger.warning("Campo de atalho ausente; reabrindo a página inicial do PromaX")
+                self.driver.get(PROMAX_URL)
+                self.wait_for_page_ready(timeout=15)
+                self._accept_pending_alert()
+                self.navigate_via_shortcut(self.routine_id)
             self.handle_alerts(max_retries=5)
             self.wait_for_page_ready(timeout=15)
             self.fill_configured_fields()

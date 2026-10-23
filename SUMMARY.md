@@ -1,9 +1,13 @@
 # 📝 Resumo Executivo - PromaX Automation Suite
 
 **Criado em:** 2024-01-15  
+**Atualizado em:** 2026-10-23  
 **Autor:** Claude Code + Rodrigo  
-**Versão:** 1.0.0  
-**Status:** ✅ Pronto para usar
+**Versão:** 2.0.0  
+**Status:** ✅ Robô em produção · ⏳ Envio ao BPO ACENE aguardando endereço do servidor
+
+> ℹ️ Este resumo descreve a versão inicial do framework. O estado atual, com as rotinas,
+> o envio ao BPO ACENE e as correções de 22/10/2026, está em [STATUS.md](STATUS.md).
 
 ---
 

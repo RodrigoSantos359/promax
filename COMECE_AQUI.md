@@ -48,7 +48,7 @@ vim .env              # Vim
 ```env
 PROMAX_URL=https://dibrasa.promaxcloud.com.br/
 PROMAX_DEFAULT_USER=filipe
-PROMAX_DEFAULT_PASSWORD=Acene003
+PROMAX_DEFAULT_PASSWORD=SUA_SENHA_AQUI
 FLASK_PORT=5000
 ```
 

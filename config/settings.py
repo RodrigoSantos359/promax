@@ -54,7 +54,9 @@ BPO_ACENE_URL = os.getenv("BPO_ACENE_URL", "").rstrip("/")
 BPO_ACENE_VERIFY_SSL = os.getenv("BPO_ACENE_VERIFY_SSL", "True").lower() == "true"
 # Rotinas cujos arquivos são enviados, pelo código PromaX (separadas por vírgula).
 BPO_ACENE_ROTINAS = [
-    r.strip() for r in os.getenv("BPO_ACENE_ROTINAS", "14.05.05,12.06.04,12.04.07.03").split(",") if r.strip()
+    r.strip()
+    for r in os.getenv("BPO_ACENE_ROTINAS", "14.05.05,12.06.04,12.04.07.03,16.03.08,01.20.04,01.20.12").split(",")
+    if r.strip()
 ]
 # Cópias dos arquivos aguardando envio (o original é apagado após a importação no Postgres).
 BPO_ACENE_OUTBOX_DIR = DATA_DIR / "envios_bpo"

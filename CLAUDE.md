@@ -26,7 +26,9 @@ promax/
 │   │   └── routines/               # Individual automation routines
 │   ├── executor.py                 # Task orchestrator
 │   └── scheduler.py                # Task scheduling
-├── ui/                             # Web interface (Flask) or desktop (Tkinter)
+├── src/ui/                         # Web interface (Flask) + templates
+├── src/integrations/               # WK Radar (token) e BPO ACENE (envio + fila)
+├── src/database/                   # Importação dos arquivos baixados no Postgres
 ├── tests/                          # pytest test suite
 ├── requirements.txt
 └── main.py                         # Entry point
@@ -97,8 +99,8 @@ antes de restringir (ver análise completa na conversa que introduziu isso).
 
 **System**: PromaX Cloud (Dibrasa)
 - **URL**: https://dibrasa.promaxcloud.com.br/
-- **Default Login**: filipe / Acene003
-- **Unit**: 161.0001 - Dibrasa
+- **Default Login**: definido em `PROMAX_DEFAULT_USER` / `PROMAX_DEFAULT_PASSWORD` (`.env`, nunca versionado)
+- **Unit**: 161.0001 - Dibrasa (única unidade cadastrada no robô)
 - **Language**: Portuguese
 
 ### Key Screens Referenced
@@ -166,6 +168,40 @@ pytest --cov=src                   # With coverage
 - List all automations with status
 - Last execution time & result
 - Real-time logs
+
+## 📤 Envio ao BPO ACENE
+
+Após importar com sucesso um arquivo de uma das rotinas em `BPO_ACENE_ROTINAS`
+(padrão: 14.05.05, 12.06.04, 12.04.07.03, 16.03.08, 01.20.04, 01.20.12), o
+`file_processor` chama `enfileirar_arquivo()` (em `src/integrations/bpo_acene_outbox.py`),
+que copia o arquivo original para `data/envios_bpo/` e grava um registro em `envios_bpo`
+com status `pendente`. A thread `EnvioBpoMonitor` envia os pendentes para
+`POST {BPO_ACENE_URL}/api/bpo/promax/importacoes`.
+
+- Sem `BPO_ACENE_URL` ou sem token da empresa, nada é enfileirado (não interrompe a importação).
+- Erros 401/403/422 viram `rejeitado` (mensagem da API gravada); 429, 5xx e falhas de rede
+  viram nova tentativa com espera crescente (até 10).
+- Limite de 30 chamadas/minuto; a cópia é apagada após `enviado` ou `duplicado`.
+- Arquivos que o importador pula por já existirem no banco **não** são enfileirados.
+
+## 📊 Importação e duplicidade
+
+`src/database/file_processor.py` não reimporta dados já existentes. A checagem é por
+empresa + rotina + data e, quando o registro traz a coluna `portador`, por portador também.
+Isso é necessário porque o extrato 12.04.07.03 gera um arquivo por portador no mesmo dia.
+Sem essa checagem por portador, arquivos de outros portadores eram descartados.
+
+## 🏦 Rotina do extrato (12.04.07.03)
+
+Gera um relatório por portador (`gerar_lista_opcoes`, `opcoes_modo='todas'`), via
+`run_multi_option_reports` em `src/automation/base.py`. Pontos que precisam ser preservados:
+
+- O relatório abre em **outra janela**: o robô guarda a janela da tela de filtros e fecha as
+  demais depois de cada portador.
+- Depois de cada portador, a URL da tela de filtros (guardada no início) é recarregada e o
+  período é preenchido de novo. Não usar `history.back()`: não restaura a tela.
+- "Nenhuma informação encontrada" é portador sem movimento no período, não erro.
+- Download de cada relatório: 120 s de timeout (o Bradesco 237 é grande).
 
 ## 🎨 Code Style
 

@@ -1,425 +1,132 @@
 # 📊 Status do Projeto - PromaX Automation Suite
 
-**Data:** 2024-01-15  
-**Versão:** 1.0.0  
-**Status:** ✅ Framework Base Completo e Funcional
+**Atualizado em:** 2026-10-23
+**Versão:** 2.0.0
+**Status:** ✅ Robô em produção (Dibrasa) · ⏳ Envio ao BPO ACENE implementado, aguardando endereço do servidor e token
+
+---
+
+## 🧭 Resumo do estado atual
+
+| Área | Situação |
+|---|---|
+| Extração dos relatórios do PromaX | ✅ 12 rotinas cadastradas; última execução de todas com `success` (22/10) |
+| Rotina do extrato 12.04.07.03 (caixa/banco) | ✅ Corrigida e validada em 22/10: 5 arquivos gerados, 27 portadores sem movimento, 0 erros |
+| Importação no Postgres (`promax`) | ✅ Corrigida: a duplicidade agora considera o portador (antes um arquivo por data bloqueava os demais) |
+| Envio dos relatórios originais ao BPO ACENE | ⏳ Código pronto e testado com API simulada; **envio desligado** (`BPO_ACENE_URL` vazio) |
+| Teste com a API real do BPO | ⏳ Depende do endereço do servidor e do token da Dibrasa |
+| Testes automatizados | ✅ 24 testes: 23 passam; 1 falha antiga e não relacionada (`test_get_routine_class_not_found`) |
+| Versionamento | ⚠️ Alterações de 22/10 ainda **não commitadas** |
+
+---
+
+## 🎯 Rotinas do PromaX
+
+Cadastradas para a empresa Dibrasa (161.0001). Todas usam `GenericRoutine` (campos configurados em `camps_map_conf`), exceto a 14.05.05, que tem classe própria.
+
+| Rotina | Relatório | Uso | Observação |
+|---|---|---|---|
+| 14.05.05 | Contas a pagar · lançamentos | Pagamentos | Classe própria (`routine_14_05_05.py`) · enviado ao BPO |
+| 12.06.04 | Financeiro · lançamentos | Recebimentos | Enviado ao BPO |
+| 12.04.07.03 | Movimento caixa/banco · lançamentos | Extrato bancário | Gera **um arquivo por portador** (`gerar_lista_opcoes`) · enviado ao BPO |
+| 16.03.08 | Análise de lançamento contábil | Despesas por título | Enviado ao BPO |
+| 01.20.04 | Fornecedores | Cadastro | Enviado ao BPO |
+| 01.20.12 | Exportação geoposicionamento | Clientes | Largura fixa, sem cabeçalho · enviado ao BPO |
+| 14.05.10 | Contas a pagar · situação dos títulos | Situação | Não enviado ao BPO |
+| 12.06.07 | Financeiro · situação dos títulos | Situação | Não enviado ao BPO |
+| 16.03.05 | Plano de contas | Cadastro | Não enviado ao BPO |
+| 03.02.37 | Notas fiscais (entradas e saídas) | Fiscal | Não enviado ao BPO · teve uma falha de login pontual em 22/10, recuperada |
+| 01.20.01.12 | Cadastro de bancos | Cadastro | Não enviado ao BPO |
+
+### Rotina do extrato (12.04.07.03): o que foi corrigido
+
+O relatório abre em outra janela, e o robô não voltava para a tela de filtros. Além disso, o alerta "Nenhuma informação encontrada" (portador sem movimento) tirava a página do fluxo. Correções em `src/automation/base.py`:
+
+- Fecha a janela do relatório depois de cada portador.
+- Recarrega a URL da tela de filtros guardada no início (mesma sessão, sem novo login) e preenche o período de novo.
+- Timeout de download de 120 s por portador (o Bradesco 237 é grande).
+- "Nenhuma informação encontrada" conta como portador sem movimento, não como erro.
+
+Duração: cerca de 2 minutos para os 32 portadores (antes, 19 minutos com falhas).
+
+---
+
+## 📤 Envio ao BPO ACENE
+
+Após a importação de cada arquivo de uma das seis rotinas abaixo, uma cópia é guardada e enviada à API do BPO (`POST /api/bpo/promax/importacoes`):
+
+- 14.05.05 pagamentos · 12.06.04 recebimentos · 12.04.07.03 extrato · 16.03.08 despesas por título · 01.20.04 fornecedores · 01.20.12 clientes
+
+Componentes:
+
+- `src/integrations/bpo_acene_client.py`: chamada HTTP e classificação da resposta (enviado, duplicado, rejeitado, tentar de novo).
+- `src/integrations/bpo_acene_outbox.py`: fila (`envios_bpo`), envio em segundo plano, até 30 chamadas por minuto, até 10 tentativas com espera crescente para falhas temporárias. Rejeições (401, 403, 422) ficam registradas com a mensagem da API.
+- Token por empresa, criptografado (Fernet) e nunca exibido pela API. Campo na tela de empresas.
+
+Para ativar: definir `BPO_ACENE_URL` no `.env`, cadastrar o token da empresa e reiniciar o container.
+
+**Limitações conhecidas:**
+
+- Arquivos importados **antes** de ativar o envio não entram na fila automaticamente.
+- Um arquivo de portador que já tem dados para a data é pulado pelo importador. Nesse caso ele também não entra na fila.
+- O 01.20.12 é de largura fixa (sem cabeçalho). Se o BPO reconhece o layout pelo cabeçalho, pode recusá-lo com erro de layout.
+
+---
+
+## 🗄️ Banco de dados
+
+**Configuração (SQLite, `data/promax.db`):**
+
+- `companies`: empresas, credenciais criptografadas, parâmetros WK Radar e `bpo_acene_token`.
+- `automations`, `execution_logs`: agenda e histórico de execuções.
+- `rotinas_map`, `camps_map_conf`: rotinas e campos configurados na tela.
+- `map_col_rel_rotina`, `map_col_rel_rotina_versoes`: layout dos relatórios.
+- `arquivos_baixados`: arquivos baixados, aguardando importação.
+- `envios_bpo`: fila de envio ao BPO.
+
+**Dados extraídos (Postgres `promax`):** uma tabela `rel_<id>_<código>_v1` por relatório, com colunas de texto. Colunas `data` = data da execução do robô; o movimento fica em `contabil` (pagamentos) ou `data_2` (extrato).
 
 ---
 
 ## ✅ Implementado
 
-### 📚 Documentação
-- [x] `README.md` - Documentação completa
-- [x] `CLAUDE.md` - Instruções para Claude Code
-- [x] `GUIA_RAPIDO.md` - Guia em português
-- [x] `ARQUITETURA.md` - Diagramas arquiteturais
-- [x] `STATUS.md` - Este arquivo
+- Login no PromaX (formulário, alertas, seleção de unidade) e navegação por atalho.
+- Execução de rotinas com campos configurados na tela, inclusive rotinas que geram um relatório por opção.
+- Download, renomeação e importação dos relatórios no Postgres, com versionamento de layout.
+- Agendador (cron) e fila de execução.
+- Interface web (Flask) com CRUD de empresas e automações, token WK Radar e token BPO ACENE.
+- Integração WK Radar (token, por empresa).
+- Envio ao BPO ACENE (código pronto; ativação pendente).
 
-### 🔧 Configuração
-- [x] `requirements.txt` - Dependências Python
-- [x] `.env.example` - Variáveis de ambiente
-- [x] `.gitignore` - Git ignore rules
-- [x] `config/settings.py` - Configurações globais
-- [x] `config/__init__.py` - Init do módulo
+## ⏳ Pendente
 
-### 🎯 Framework Core
-- [x] `src/automation/base.py` - Classe base elegante (BaseRoutine)
-  - ✅ Métodos de navegação
-  - ✅ Esperas explícitas (WebDriverWait)
-  - ✅ Tratamento de erros
-  - ✅ Logging estruturado
-  - ✅ Helpers de interação (click, send_keys, etc)
-
-- [x] `src/browser/driver.py` - Gerenciador WebDriver
-  - ✅ Auto-download com webdriver-manager
-  - ✅ Opções customizáveis
-  - ✅ Context managers
-  - ✅ Quit seguro
-
-- [x] `src/automation/__init__.py` - Registry de rotinas
-
-### 🔐 Automação de Login
-- [x] `src/automation/login.py` - PromaXLogin
-  - ✅ Preenchimento de formulário
-  - ✅ Submissão de login
-  - ✅ Tratamento de alerts
-  - ✅ Seleção de unidade
-  - ✅ Extração de SessionID
-  - ✅ Validação de sessão ativa
-
-### 📊 Banco de Dados
-- [x] `config/database.py` - Modelos SQLAlchemy
-  - ✅ Tabela `companies`
-  - ✅ Tabela `automations`
-  - ✅ Tabela `execution_logs`
-  - ✅ Relacionamentos
-  - ✅ Criptografia de senhas
-  - ✅ DatabaseService com CRUD
-
-### ⚙️ Executor de Tarefas
-- [x] `src/automation/executor.py` - TaskExecutor
-  - ✅ Execução simples
-  - ✅ Execução com retry automático
-  - ✅ Logging detalhado
-  - ✅ Persistência de resultados
-  - ✅ Medição de duração
-  - ✅ ExecutionResult class
-
-### 🎨 Interface Web
-- [x] `src/ui/app.py` - Aplicação Flask
-  - ✅ Rotas de dashboard
-  - ✅ API RESTful
-  - ✅ CRUD de empresas
-  - ✅ CRUD de automações
-  - ✅ Execução via API
-  - ✅ Logs via API
-  - ✅ Error handlers
-  - ✅ CLI commands
-
-- [x] `src/ui/__init__.py` - Init do módulo
-- [x] `src/ui/templates/dashboard.html` - Dashboard responsivo
-
-### 🚀 Rotinas de Exemplo
-- [x] `src/automation/routines/routine_template.py` - Template completo
-- [x] `src/automation/routines/routine_14_05_05.py` - Exemplo real
-- [x] `src/automation/routines/__init__.py` - Init do módulo
-
-### 🧪 Testes
-- [x] `tests/__init__.py` - Init do módulo
-- [x] `tests/test_example.py` - Testes unitários básicos
-
-### 📍 Ponto de Entrada
-- [x] `main.py` - Script com múltiplos modos
-  - ✅ Modo teste
-  - ✅ Modo web
-  - ✅ Modo executor
-  - ✅ Inicialização de BD
-  - ✅ Argparse com help
+- Endereço do servidor BPO ACENE e token da Dibrasa; teste com a API real (enviar um arquivo, consultar o lote).
+- Reenvio ao BPO dos arquivos de setembro e outubro (backfill).
+- Commit das alterações de 22/10.
+- Rever a segurança do projeto: a senha padrão do PromaX ainda aparece em código-fonte (`config/settings.py`, `main.py`), e a senha da API WK foi exposta em conversa. Ambas devem ser trocadas e movidas para o `.env` ou o cadastro criptografado.
+- Confirmar com a equipe a separação de VPN por cliente (ainda não implementada).
 
 ---
 
-## 📈 Funcionalidades Disponíveis
+## 🧪 Testes
 
-### ✅ Automação
-```python
-# Criar rotina simples
-from src.automation.base import BaseRoutine
-
-class MinhaRotina(BaseRoutine):
-    ROUTINE_ID = "01.02.03"
-    def execute(self):
-        self.navigate_to_routine()
-        # ... sua lógica
-        return {"status": "success"}
-```
-
-### ✅ WebDriver
-```python
-# Usar driver
-from src.browser import DriverManager
-
-driver = DriverManager.create_driver(headless=False)
-# ... usar driver
-DriverManager.quit_driver(driver)
-
-# Ou com context manager
-with DriverManager.create_context_driver() as driver:
-    # driver pronto
-    pass  # fecha automaticamente
-```
-
-### ✅ Login
-```python
-from src.automation.login import PromaXLogin
-
-login = PromaXLogin(driver, username="user", password="pass")
-result = login.login()  # Automático: formulário + alerts + unidade
-```
-
-### ✅ Banco de Dados
-```python
-from config.database import DatabaseService
-
-# Criar empresa
-company = DatabaseService.create_company(
-    name="Dibrasa",
-    promax_url="https://...",
-    username="filipe",
-    password="senha",
-    unit="161.0001"
-)
-
-# Criar automação
-automation = DatabaseService.create_automation(
-    company_id=company.id,
-    routine_id="14.05.05",
-    ...
-)
-
-# Registrar execução
-DatabaseService.log_execution(
-    automation_id=automation.id,
-    company_id=company.id,
-    status="success",
-    ...
-)
-```
-
-### ✅ Executor
-```python
-from src.automation.executor import TaskExecutor
-
-executor = TaskExecutor()
-
-# Execução simples
-result = executor.execute_automation(
-    automation_id=1,
-    company_id=1,
-    headless=True
-)
-
-# Com retry automático
-result = executor.execute_with_retry(
-    automation_id=1,
-    company_id=1,
-    max_retries=3,
-    retry_delay=60
-)
-```
-
-### ✅ Interface Web
 ```bash
-python main.py --web
-# Abre em http://localhost:5000
-
-# APIs disponíveis:
-# GET    /api/companies
-# POST   /api/companies
-# GET    /api/automations
-# POST   /api/automations
-# POST   /api/automations/<id>/execute
-# POST   /api/automations/<id>/execute-with-retry
-# GET    /api/logs/<id>
+pytest                      # todos
+pytest tests/test_bpo_acene.py -v
 ```
 
----
+- `tests/conftest.py` usa um SQLite temporário e uma chave de criptografia de teste, sem tocar no banco real.
+- `tests/test_bpo_acene.py`: cliente e fila do BPO, com a API simulada.
+- `tests/test_example.py`: testes básicos do registro de rotinas (1 falha antiga).
 
-## 🚧 [TODO] - Próximas Fases
-
-### Fase 1: Melhorias UI
-- [ ] Templates HTML para companies (create, edit, detail)
-- [ ] Templates HTML para automations (create, edit, detail)
-- [ ] Dashboard com gráficos de execução (Chart.js)
-- [ ] Autenticação de usuários
-- [ ] CSRF protection
-
-### Fase 2: Agendamento
-- [ ] `src/automation/scheduler.py` - APScheduler integration
-  - [ ] Agendamento automático baseado em `execution_time` e `interval`
-  - [ ] Persistência de jobs
-  - [ ] Web UI para visualizar agendamentos
-
-### Fase 3: Melhorias de Robustez
-- [ ] `src/browser/waits.py` - Helpers avançados de espera
-- [ ] Suporte a múltiplos browsers (Firefox, Edge)
-- [ ] Paralelização de execuções
-- [ ] Cache de seletores CSS
-- [ ] Retry automático de elementos não encontrados
-
-### Fase 4: Testes Completos
-- [ ] `tests/test_login.py` - Testes de login
-- [ ] `tests/test_routines.py` - Testes de rotinas
-- [ ] `tests/test_executor.py` - Testes de executor
-- [ ] Coverage > 80%
-
-### Fase 5: Produção
-- [ ] Dockerfile e docker-compose
-- [ ] CI/CD (GitHub Actions)
-- [ ] Migrations do banco de dados (Alembic)
-- [ ] Logging centralizado
-- [ ] Health checks
-- [ ] Rate limiting
+Não há teste automatizado para o importador (`file_processor.py`) nem para a navegação da rotina do extrato. Ambos foram validados em execução real.
 
 ---
 
-## 📦 Dependências Instaladas
+## 📈 Histórico recente
 
-```
-✅ selenium==4.15.2              # Automação de navegador
-✅ webdriver-manager==4.0.1      # Auto-download ChromeDriver
-✅ Flask==3.0.0                  # Framework web
-✅ python-dotenv==1.0.0          # Variáveis de ambiente
-✅ cryptography==41.0.7          # Criptografia de senhas
-✅ sqlalchemy==2.0.23            # ORM banco de dados
-✅ APScheduler==3.10.4           # Agendamento (instalado, não usado)
-✅ requests==2.31.0              # HTTP client
-✅ pytest==7.4.3                 # Testes
-✅ pytest-cov==4.1.0             # Coverage de testes
-```
-
----
-
-## 🎯 Como Usar Agora
-
-### 1. Setup Inicial
-```bash
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-```
-
-### 2. Teste Simples
-```bash
-python main.py
-```
-
-### 3. Interface Web
-```bash
-python main.py --init-db
-python main.py --web
-# Acessar http://localhost:5000
-```
-
-### 4. Criar Nova Rotina
-```bash
-# Copiar template
-copy src\automation\routines\routine_template.py src\automation\routines\routine_XX_XX_XX.py
-
-# Editar arquivo com sua lógica
-
-# Registrar em src/automation/__init__.py:
-from src.automation.routines.routine_XX_XX_XX import RoutineXX_XX_XX
-AVAILABLE_ROUTINES = {
-    "XX.XX.XX": RoutineXX_XX_XX,
-}
-```
-
----
-
-## 📊 Estrutura de Arquivos Final
-
-```
-✅ promax/
-├── ✅ main.py
-├── ✅ requirements.txt
-├── ✅ .env.example
-├── ✅ .gitignore
-├── ✅ README.md
-├── ✅ CLAUDE.md
-├── ✅ GUIA_RAPIDO.md
-├── ✅ ARQUITETURA.md
-├── ✅ STATUS.md (este)
-├── ✅ config/
-│   ├── ✅ __init__.py
-│   ├── ✅ settings.py
-│   └── ✅ database.py
-├── ✅ src/
-│   ├── ✅ __init__.py
-│   ├── ✅ browser/
-│   │   ├── ✅ __init__.py
-│   │   └── ✅ driver.py
-│   ├── ✅ automation/
-│   │   ├── ✅ __init__.py
-│   │   ├── ✅ base.py
-│   │   ├── ✅ login.py
-│   │   ├── ✅ executor.py
-│   │   └── ✅ routines/
-│   │       ├── ✅ __init__.py
-│   │       ├── ✅ routine_template.py
-│   │       └── ✅ routine_14_05_05.py
-│   └── ✅ ui/
-│       ├── ✅ __init__.py
-│       ├── ✅ app.py
-│       ├── ✅ templates/
-│       │   └── ✅ dashboard.html
-│       └── ⏳ static/
-└── ✅ tests/
-    ├── ✅ __init__.py
-    └── ✅ test_example.py
-```
-
----
-
-## 🏆 Padrões de Design Implementados
-
-✅ **Abstract Base Class** - `BaseRoutine`  
-✅ **Factory Pattern** - `get_routine_class()`  
-✅ **Context Manager Pattern** - `create_context_driver()`  
-✅ **Registry Pattern** - `AVAILABLE_ROUTINES`  
-✅ **Dependency Injection** - Passagem de `driver` e `logger`  
-✅ **Service Pattern** - `DatabaseService`, `PromaXLogin`, `TaskExecutor`  
-✅ **Repository Pattern** - `SessionLocal()` com SQLAlchemy  
-✅ **Singleton Pattern** - `SessionLocal`, `DriverManager`  
-
----
-
-## 📈 Métricas
-
-| Métrica | Valor |
-|---------|-------|
-| Arquivos criados | 26 |
-| Linhas de código | ~3.500 |
-| Classes abstratas | 1 |
-| Rotinas de exemplo | 1 |
-| Endpoints de API | 7 |
-| Tabelas de BD | 3 |
-| Documentação | 4 arquivos |
-| Testes de exemplo | 1 arquivo |
-
----
-
-## 🔐 Segurança
-
-✅ Senhas criptografadas com Fernet  
-✅ `.env` file não versionado  
-✅ Logs não contêm credenciais  
-⏳ CSRF protection em Flask  
-⏳ Autenticação de usuários  
-⏳ Rate limiting  
-
----
-
-## ⚡ Performance
-
-✅ WebDriverWait (explicit waits)  
-✅ Sem `time.sleep()` em produção  
-✅ Logging assíncrono  
-⏳ Paralelização de tarefas  
-⏳ Cache de seletores  
-⏳ Índices de BD  
-
----
-
-## 📞 Próximos Passos Recomendados
-
-1. **Teste o projeto básico**
-   ```bash
-   python main.py
-   ```
-
-2. **Inicie a interface web**
-   ```bash
-   python main.py --init-db
-   python main.py --web
-   ```
-
-3. **Crie sua primeira rotina customizada**
-   - Copie `routine_template.py`
-   - Implemente sua lógica
-   - Registre em `__init__.py`
-
-4. **Implemente agendamento** (próxima fase)
-   - Use APScheduler para agendar tarefas
-   - Integre com interface web
-
-5. **Deploy em produção**
-   - Docker
-   - CI/CD
-   - Monitoring
-
----
-
-**Desenvolvido com ❤️ por Rodrigo**  
-**Email:** rodrigo@lifecti.com.br  
-**Licença:** Propriedade da Dibrasa
+| Data | Mudança |
+|---|---|
+| 2026-10-22 | Rotina 12.04.07.03 corrigida (janelas, URL de retorno, timeouts, alerta sem movimento) e validada com status success |
+| 2026-10-22 | Importador: duplicidade por data e portador (antes descartava arquivos de outros portadores do mesmo dia) |
+| 2026-10-22 | Envio ao BPO ACENE: fila, cliente, token por empresa, campo na tela, 6 rotinas |

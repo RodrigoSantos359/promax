@@ -93,7 +93,16 @@ PROMAX_DEFAULT_USER=SEU_USUARIO_AQUI
 PROMAX_DEFAULT_PASSWORD=SUA_SENHA_AQUI
 ```
 
-3. Inicie a aplicação:
+3. (Opcional) Envio dos relatórios ao BPO ACENE. Com `BPO_ACENE_URL` vazio, nada é enviado:
+```env
+BPO_ACENE_URL=https://endereco-do-bpo
+BPO_ACENE_VERIFY_SSL=True
+# Padrão: 14.05.05,12.06.04,12.04.07.03,16.03.08,01.20.04,01.20.12
+BPO_ACENE_ROTINAS=14.05.05,12.06.04,12.04.07.03,16.03.08,01.20.04,01.20.12
+```
+O token do BPO é cadastrado por empresa, na tela de empresas (campo "Token API BPO ACENE"), e fica criptografado.
+
+4. Inicie a aplicação:
 ```bash
 python main.py
 ```
@@ -224,34 +233,68 @@ CREATE TABLE companies (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Automações
+-- Automações (agenda + último resultado)
 CREATE TABLE automations (
     id INTEGER PRIMARY KEY,
     company_id INTEGER NOT NULL,
-    routine_id TEXT NOT NULL,
+    routine_id TEXT NOT NULL,        -- código do relatório, ex: '14.05.05'
     is_active BOOLEAN DEFAULT 1,
     start_date DATE NOT NULL,
-    execution_time TEXT NOT NULL,  -- HH:MM
-    interval TEXT NOT NULL,        -- 'daily', 'weekly', 'monthly'
+    execution_time TEXT NOT NULL,    -- HH:MM
+    interval TEXT NOT NULL,          -- 'daily', 'weekly', 'monthly'
     max_retries INTEGER DEFAULT 3,
     retry_delay INTEGER DEFAULT 60,
     last_execution TIMESTAMP,
-    last_status TEXT,
+    last_status TEXT,                -- 'success', 'failed'
+    last_error TEXT,
+    last_summary TEXT,
+    rotina_map_id INTEGER,           -- rotina configurada na tela
     created_at TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES companies(id)
 );
 
--- Logs de Execução
+-- Logs de execução
 CREATE TABLE execution_logs (
     id INTEGER PRIMARY KEY,
     automation_id INTEGER NOT NULL,
     executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status TEXT,           -- 'success', 'failed', 'retry'
+    status TEXT,           -- 'success', 'failed'
     error_message TEXT,
     duration_seconds FLOAT,
     FOREIGN KEY (automation_id) REFERENCES automations(id)
 );
+
+-- Arquivos baixados, aguardando importação no Postgres
+CREATE TABLE arquivos_baixados (
+    id INTEGER PRIMARY KEY,
+    id_rotina INTEGER,
+    id_empresa INTEGER,
+    nome_arquivo TEXT,
+    data DATE NOT NULL,              -- data de referência (dia anterior à execução)
+    status TEXT NOT NULL,            -- 'baixado', 'sem_dados', 'failed', 'erro_*'
+    created_at TIMESTAMP
+);
+
+-- Fila de envio ao BPO ACENE
+CREATE TABLE envios_bpo (
+    id INTEGER PRIMARY KEY,
+    id_empresa INTEGER NOT NULL,
+    id_rotina INTEGER,
+    competencia TEXT NOT NULL,       -- AAAA-MM
+    caminho_arquivo TEXT NOT NULL,   -- cópia em data/envios_bpo
+    nome_arquivo TEXT NOT NULL,
+    status TEXT NOT NULL,            -- 'pendente', 'enviado', 'duplicado', 'rejeitado', 'erro'
+    tentativas INTEGER DEFAULT 0,
+    proxima_tentativa TIMESTAMP,
+    http_status INTEGER,
+    lote_id INTEGER,
+    lote_status TEXT,
+    mensagem TEXT,
+    enviado_em TIMESTAMP
+);
 ```
+
+Os dados extraídos ficam no Postgres (banco `promax`), uma tabela `rel_<id>_<código>_v1` por relatório. A coluna `data` é a data da execução do robô; o movimento fica em `contabil` (pagamentos) ou `data_2` (extrato).
 
 ## 🧪 Testes
 
@@ -263,8 +306,10 @@ pytest
 pytest --cov=src
 
 # Apenas um arquivo
-pytest tests/test_login.py -v
+pytest tests/test_bpo_acene.py -v
 ```
+
+Os testes usam um SQLite temporário (`tests/conftest.py`), sem tocar no banco real. Hoje há 1 falha antiga e não relacionada (`test_get_routine_class_not_found`).
 
 ## 📝 Logging
 
